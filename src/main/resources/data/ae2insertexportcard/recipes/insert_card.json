@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RPR",
+    "PAP",
+    "RPR"
+  ],
+  "key": {
+    "A": { "item": "ae2:advanced_card" },
+    "P": { "item": "ae2:printed_engineering_processor" },
+    "R": { "item": "minecraft:redstone_block" }
+  },
+  "result": {
+    "item": "ae2insertexportcard:insert_card",
+    "count": 1
+  }
+}

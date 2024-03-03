@@ -1,0 +1,34 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+issueTrackerURL="https://github.com/starforcraft/AE2-Insert-Export-Card/issues/new/choose"
+[[mods]]
+modId="ae2insertexportcard"
+version="${file.jarVersion}"
+displayName="AE2 Insert Export Card"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/ae2-insert-export-card"
+logoFile="logo.png"
+credits="Thanks for downloading this mod."
+authors="Ultramega"
+description="This mod adds a Insert and Export Card."
+
+[[dependencies.ae2insertexportcard]]
+    modId="ae2"
+    mandatory=true
+    versionRange="[15,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.ae2insertexportcard]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47.2.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.ae2insertexportcard]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,)"
+    ordering="NONE"
+    side="BOTH"
