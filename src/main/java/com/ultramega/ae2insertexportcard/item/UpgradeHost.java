@@ -55,7 +55,7 @@ public class UpgradeHost {
             }
         }
 
-        return IncludeExclude.WHITELIST;
+        return IncludeExclude.BLACKLIST;
     }
 
     public void toggleFilterMode(IncludeExclude filterMode) {
