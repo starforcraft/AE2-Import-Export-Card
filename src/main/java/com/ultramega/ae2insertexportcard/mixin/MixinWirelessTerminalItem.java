@@ -38,12 +38,19 @@ import java.util.List;
 import java.util.Optional;
 
 @Mixin(WirelessTerminalItem.class)
-public class MixinWirelessTerminalItem {
+public class MixinWirelessTerminalItem extends Item {
     @Nullable
     @Unique
     private IWirelessAccessPoint ae2InsertExportCard$myWap;
 
-    public void inventoryTick(@NotNull ItemStack stack, Level level, @NotNull Entity entity, int slotId, boolean isSelected, CallbackInfo ci) {
+    public MixinWirelessTerminalItem(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
+        super.inventoryTick(stack, level, entity, slotId, isSelected);
+
         if (level.isClientSide())
             return;
         if (!(entity instanceof ServerPlayer player))
