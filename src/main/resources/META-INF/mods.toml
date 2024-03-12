@@ -22,7 +22,7 @@ description="This mod adds a Insert and Export Card."
 [[dependencies.ae2insertexportcard]]
     modId="forge"
     mandatory=true
-    versionRange="[47.2.0,)"
+    versionRange="[47,)"
     ordering="NONE"
     side="BOTH"
 
