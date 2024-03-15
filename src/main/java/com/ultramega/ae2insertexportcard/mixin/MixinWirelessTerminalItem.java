@@ -12,6 +12,7 @@ import appeng.me.helpers.ChannelPowerSrc;
 import appeng.me.helpers.PlayerSource;
 import com.ultramega.ae2insertexportcard.AE2InsertExportCard;
 import com.ultramega.ae2insertexportcard.item.UpgradeHost;
+import de.mari_023.ae2wtlib.wut.ItemWUT;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -37,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@Mixin(WirelessTerminalItem.class)
+@Mixin({WirelessTerminalItem.class, ItemWUT.class})
 public class MixinWirelessTerminalItem extends Item {
     @Nullable
     @Unique
