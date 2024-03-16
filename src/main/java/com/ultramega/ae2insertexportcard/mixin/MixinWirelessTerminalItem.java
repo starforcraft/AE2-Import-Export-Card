@@ -80,7 +80,6 @@ public class MixinWirelessTerminalItem extends Item {
                 CompoundTag tag = (CompoundTag) tagList.getCompound(i).get("tag");
 
                 if(tag != null && (isInsertUpgrade || isExportUpgrade)) {
-
                     int[] selectedInventorySlots = tag.getIntArray(UpgradeHost.NBT_SELECTED_INVENTORY_SLOTS);
                     boolean filterMode = isInsertUpgrade ? tag.getBoolean(UpgradeHost.NBT_FILTER_MODE) : false;
 
@@ -108,6 +107,7 @@ public class MixinWirelessTerminalItem extends Item {
 
                                         StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), AEItemKey.of(itemInInventory), itemInInventory.getCount(), new PlayerSource(player), Actionable.MODULATE);
                                         player.getInventory().setItem(j, ItemStack.EMPTY);
+                                        player.containerMenu.broadcastChanges();
                                     } else {
                                         if(filters.isEmpty()) return;
 
@@ -119,13 +119,15 @@ public class MixinWirelessTerminalItem extends Item {
                                             if (playerInventory.isPresent()) {
                                                 if(itemInInventory.isEmpty() || itemInInventory.getItem() == filters.get(k)) {
                                                     int extractAmount = Math.min(itemInInventory.getMaxStackSize() - itemInInventory.getCount(), itemInInventory.getMaxStackSize());
+                                                    int realExtractAmount = Math.min(filters.get(k).getDefaultInstance().getMaxStackSize(), extractAmount);
 
-                                                    long extracted = StorageHelper.poweredExtraction(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), AEItemKey.of(filters.get(k)), extractAmount, new PlayerSource(player), Actionable.MODULATE);
+                                                    long extracted = StorageHelper.poweredExtraction(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), AEItemKey.of(filters.get(k)), realExtractAmount, new PlayerSource(player), Actionable.MODULATE);
                                                     if(extracted <= 0) {
                                                         continue;
                                                     }
 
                                                     playerInventory.get().insertItem(j, new ItemStack(filters.get(k), (int)extracted), false);
+                                                    player.containerMenu.broadcastChanges();
                                                 }
                                             }
                                         }
