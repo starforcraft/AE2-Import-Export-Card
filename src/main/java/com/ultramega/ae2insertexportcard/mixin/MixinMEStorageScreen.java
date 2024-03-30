@@ -46,10 +46,8 @@ public abstract class MixinMEStorageScreen extends AEBaseScreen {
         }
     }
 
-    @Override
-    protected void updateBeforeRender() {
-        super.updateBeforeRender();
-
+    @Inject(at = @At("TAIL"), method = "updateBeforeRender")
+    protected void updateBeforeRender(CallbackInfo ci) {
         if(ae2insertExportCard$upgradeCardButton[0] != null) {
             ae2insertExportCard$upgradeCardButton[0].setVisibility(((MEStorageScreen<?>) (Object) this).getMenu().getHost().getInstalledUpgrades(ModItems.INSERT_CARD.get()) > 0);
             ae2insertExportCard$upgradeCardButton[1].setVisibility(((MEStorageScreen<?>) (Object) this).getMenu().getHost().getInstalledUpgrades(ModItems.EXPORT_CARD.get()) > 0);
