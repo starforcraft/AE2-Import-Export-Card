@@ -114,7 +114,7 @@ dependencies {
     implementation fg.deobf("appeng:appliedenergistics2-forge:${ae2_version}")
 
     implementation fg.deobf('curse.maven:aeinfinitybooster-559313:4869749')
-    implementation fg.deobf('curse.maven:ae2wirelessterminals-459929:5162352')
+    implementation fg.deobf('curse.maven:ae2wirelessterminals-459929:5217955')
     implementation fg.deobf('curse.maven:powah-633483:4638301')
     implementation fg.deobf('curse.maven:curios-309927:4583413')
     implementation fg.deobf('curse.maven:cloth-348521:4633444')

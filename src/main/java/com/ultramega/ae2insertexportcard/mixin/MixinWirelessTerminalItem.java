@@ -99,9 +99,11 @@ public class MixinWirelessTerminalItem extends Item {
                                     if (isInsertUpgrade) {
                                         if(filters.isEmpty() && filterMode) return;
 
-                                        StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), AEItemKey.of(itemInInventory), itemInInventory.getCount(), new PlayerSource(player), Actionable.MODULATE);
-                                        player.getInventory().setItem(j, ItemStack.EMPTY);
-                                        player.containerMenu.broadcastChanges();
+                                        long amount = StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), AEItemKey.of(itemInInventory), itemInInventory.getCount(), new PlayerSource(player), Actionable.MODULATE);
+                                        if(amount > 0) {
+                                            player.getInventory().setItem(j, ItemStack.EMPTY);
+                                            player.containerMenu.broadcastChanges();
+                                        }
                                     } else {
                                         if(filters.isEmpty()) return;
 
