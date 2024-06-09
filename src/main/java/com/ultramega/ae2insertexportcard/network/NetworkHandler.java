@@ -18,6 +18,7 @@ public class NetworkHandler {
     public void register() {
         int id = 0;
         this.handler.registerMessage(id++, UpgradeUpdateMessage.class, UpgradeUpdateMessage::encode, UpgradeUpdateMessage::decode, UpgradeUpdateMessage::handle);
+        this.handler.registerMessage(id++, LockSlotUpdateMessage.class, LockSlotUpdateMessage::encode, LockSlotUpdateMessage::decode, LockSlotUpdateMessage::handle);
     }
 
     public void sendToServer(Object message) {

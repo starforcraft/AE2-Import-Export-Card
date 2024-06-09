@@ -38,6 +38,12 @@ public class AE2InsertExportCard {
             Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlib.UNIVERSAL_TERMINAL, 1);
         }
 
+        Upgrades.add(AEItems.FUZZY_CARD, ModItems.INSERT_CARD.get(), 1);
+        Upgrades.add(AEItems.FUZZY_CARD, ModItems.EXPORT_CARD.get(), 1);
+        Upgrades.add(AEItems.INVERTER_CARD, ModItems.INSERT_CARD.get(), 1);
+        Upgrades.add(AEItems.CRAFTING_CARD, ModItems.EXPORT_CARD.get(), 1);
+        Upgrades.add(AEItems.SPEED_CARD, ModItems.EXPORT_CARD.get(), 1);
+
         AE2InsertExportCard.NETWORK_HANDLER.register();
     }
 }

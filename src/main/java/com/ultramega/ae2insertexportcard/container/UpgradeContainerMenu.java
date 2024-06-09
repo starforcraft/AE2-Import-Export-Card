@@ -1,21 +1,27 @@
 package com.ultramega.ae2insertexportcard.container;
 
-import appeng.api.config.IncludeExclude;
+import appeng.api.config.FuzzyMode;
+import appeng.api.config.Settings;
 import appeng.api.storage.ISubMenuHost;
+import appeng.api.upgrades.IUpgradeInventory;
+import appeng.core.definitions.AEItems;
 import appeng.helpers.WirelessTerminalMenuHost;
 import appeng.menu.AEBaseMenu;
 import appeng.menu.ISubMenu;
 import appeng.menu.SlotSemantic;
+import appeng.menu.SlotSemantics;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.implementations.MenuTypeBuilder;
 import appeng.menu.slot.FakeSlot;
 import appeng.util.ConfigInventory;
 import appeng.util.ConfigMenuInventory;
+import com.google.common.base.Preconditions;
 import com.ultramega.ae2insertexportcard.item.UpgradeHost;
 import com.ultramega.ae2insertexportcard.registry.ModSlotSemantics;
 import com.ultramega.ae2insertexportcard.util.UpgradeType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.level.ItemLike;
 
 public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     public static final String INSERT_CARD_ID = "insert_card";
@@ -25,30 +31,23 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     public static final MenuType<UpgradeContainerMenu> TYPE_EXPORT = MenuTypeBuilder.create((id, inventory, host) -> new UpgradeContainerMenu(UpgradeType.EXPORT, id, inventory, host, new UpgradeHost(UpgradeType.EXPORT, id, inventory, host)), WirelessTerminalMenuHost.class)
             .build(EXPORT_CARD_ID);
 
-    private final static String SET_FILTER_MODE = "setFilterMode";
-
     private final UpgradeType type;
     private final WirelessTerminalMenuHost host;
     private final UpgradeHost upgradeHost;
 
-    private IncludeExclude currentFilterMode;
-    @GuiSync(97)
-    private IncludeExclude filterMode;
+    @GuiSync(0)
+    public FuzzyMode fzMode = FuzzyMode.IGNORE_ALL;
 
     public UpgradeContainerMenu(UpgradeType type, int id, Inventory playerInventory, WirelessTerminalMenuHost host, UpgradeHost upgradeHost) {
         super(type == UpgradeType.INSERT ? TYPE_INSERT : TYPE_EXPORT, id, playerInventory, host);
         this.type = type;
         this.host = host;
         this.upgradeHost = upgradeHost;
-        this.filterMode = upgradeHost.getFilterMode();
 
-        for(int i = 0; i < playerInventory.items.size(); i++) {
-            lockPlayerInventorySlot(i);
-        }
+        setupUpgrades(getUpgradeHost().getUpgrades());
 
         addConfigSlots(upgradeHost.filterConfig, type == UpgradeType.INSERT ? ModSlotSemantics.INSERT_CONFIG : ModSlotSemantics.EXPORT_CONFIG);
-        createPlayerInventorySlots(playerInventory);
-        registerClientAction(SET_FILTER_MODE, IncludeExclude.class, this::setFilterMode);
+        createCardPlayerInventorySlots(playerInventory);
     }
 
     private void addConfigSlots(ConfigInventory config, SlotSemantic slotSemantic) {
@@ -59,13 +58,14 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
         }
     }
 
-    @Override
-    public void onServerDataSync() {
-        super.onServerDataSync();
+    private void createCardPlayerInventorySlots(Inventory playerInventory) {
+        Preconditions.checkState(this.getSlots(SlotSemantics.PLAYER_INVENTORY).isEmpty(), "Player inventory was already created");
 
-        if (this.currentFilterMode != this.filterMode) {
-            this.setFilterMode(this.filterMode);
-            this.currentFilterMode = filterMode;
+        for(int i = 0; i < playerInventory.items.size(); ++i) {
+            CardPlayerSlot slot = new CardPlayerSlot(playerInventory, i);
+
+            SlotSemantic s = i < Inventory.getSelectionSize() ? SlotSemantics.PLAYER_HOTBAR : SlotSemantics.PLAYER_INVENTORY;
+            this.addSlot(slot, s);
         }
     }
 
@@ -74,18 +74,9 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
         super.broadcastChanges();
 
         if (isServerSide()) {
-            if (this.filterMode != getFilterMode()) {
-                this.setFilterMode(getFilterMode());
+            if(getUpgradeHost().getUpgrades().isInstalled(AEItems.FUZZY_CARD)) {
+                this.setFuzzyMode(getUpgradeHost().getConfigManager().getSetting(Settings.FUZZY_MODE));
             }
-        }
-    }
-
-    public void setFilterMode(IncludeExclude filterMode) {
-        if (isClientSide()) {
-            sendClientAction(SET_FILTER_MODE, filterMode);
-        } else {
-            this.filterMode = filterMode;
-            getUpgradeHost().toggleFilterMode(filterMode);
         }
     }
 
@@ -98,7 +89,24 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
         return upgradeHost;
     }
 
-    public IncludeExclude getFilterMode() {
-        return filterMode;
+    @Override
+    public Object getTarget() {
+        return upgradeHost;
+    }
+
+    public FuzzyMode getFuzzyMode() {
+        return this.fzMode;
+    }
+
+    public void setFuzzyMode(FuzzyMode fzMode) {
+        this.fzMode = fzMode;
+    }
+
+    public final IUpgradeInventory getUpgrades() {
+        return getUpgradeHost().getUpgrades();
+    }
+
+    public final boolean hasUpgrade(ItemLike upgradeCard) {
+        return getUpgrades().isInstalled(upgradeCard);
     }
 }
