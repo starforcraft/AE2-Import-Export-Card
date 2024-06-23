@@ -25,11 +25,7 @@ repositories {
         }
     }
     maven {
-        name = "TerraformersMC"
-        url = "https://maven.terraformersmc.com/"
-        content {
-            includeGroup "dev.emi"
-        }
+        url "https://maven.shedaniel.me"
     }
 }
 
@@ -79,7 +75,7 @@ dependencies {
     implementation "appeng:appliedenergistics2-neoforge:${ae2_version}"
     implementation "curse.maven:ae2wirelessterminals-459929:5441008"
 
-    //runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
+    runtimeOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
 }
 
 tasks.withType(ProcessResources).configureEach {
@@ -91,7 +87,7 @@ tasks.withType(ProcessResources).configureEach {
             loader_version_range   : loader_version_range,
             ae2_version            : ae2_version,
             ae2_version_range      : ae2_version_range,
-            emi_version            : emi_version,
+            rei_version            : rei_version,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_url                : mod_url,
