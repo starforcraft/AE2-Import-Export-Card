@@ -1,0 +1,7 @@
+{
+	"itemGroup.ae2importexportcard" : "AE2 Картки вставки та експорту",
+	"item.ae2importexportcard.import_card": "Картка вставки",
+	"item.ae2importexportcard.export_card": "Картка експорту",
+	"gui.ae2importexportcard.whitelist": "Білий список",
+	"gui.ae2importexportcard.blacklist": "Чорний список"
+}

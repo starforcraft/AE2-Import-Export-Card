@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8.3",
+  "package": "com.ultramega.ae2importexportcard.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "MixinMEStorageMenu",
+    "MixinWirelessTerminalItem"
+  ],
+  "client": [
+    "MixinMEStorageScreen"
+  ]
+}

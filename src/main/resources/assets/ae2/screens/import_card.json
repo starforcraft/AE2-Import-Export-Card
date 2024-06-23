@@ -7,7 +7,7 @@
     "srcRect": [0, 0, 176, 163]
   },
   "slots": {
-    "AE2IMPORTEXPORTCARD_EXPORT_CONFIG": {
+    "AE2IMPORTEXPORTCARD_IMPORT_CONFIG": {
       "left": 8,
       "top": 29,
       "grid": "BREAK_AFTER_9COLS"
@@ -16,7 +16,7 @@
   "text": {
     "dialog_title": {
       "text": {
-        "translate": "item.ae2importexportcard.export_card"
+        "translate": "item.ae2importexportcard.import_card"
       },
       "position": {
         "left": 8,
