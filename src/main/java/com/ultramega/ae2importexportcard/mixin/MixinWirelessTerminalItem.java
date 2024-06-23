@@ -187,7 +187,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                         continue;
                                                     }
 
-                                                    playerInventory.insertItem(j, fuzzyItem.toStack(), false);
+                                                    playerInventory.insertItem(j, fuzzyItem.toStack(size), false);
                                                     player.containerMenu.broadcastChanges();
                                                 }
                                             }
