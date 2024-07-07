@@ -161,12 +161,12 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
         if (checked) {
             if (type == UpgradeType.IMPORT) {
-                graphics.blit(CHECKMARK, x + 7, y, 0, 0, 9, 8, 9, 8);
+                graphics.blit(CHECKMARK, x, y, 0, 0, 16, 16, 16, 16);
             } else {
                 graphics.drawString(font, String.valueOf(filterIndex), x + 16 - font.width(String.valueOf(filterIndex)), y, Color.GREEN.hashCode());
             }
         } else {
-            graphics.blit(XMARK, x + 9, y, 0, 0, 7, 7, 7, 7);
+            graphics.blit(XMARK, x, y, 0, 0, 16, 16, 16, 16);
         }
 
         graphics.pose().popPose();
