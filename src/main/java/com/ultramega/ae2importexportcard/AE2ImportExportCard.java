@@ -9,11 +9,9 @@ import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
 import com.ultramega.ae2importexportcard.registry.ModCreativeTabs;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
-import com.ultramega.ae2importexportcard.registry.ModMenuTypes;
 import com.ultramega.ae2importexportcard.screen.UpgradeScreen;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
 import de.mari_023.ae2wtlib.AE2wtlibItems;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
@@ -22,7 +20,6 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-import net.neoforged.neoforge.registries.RegisterEvent;
 
 @Mod(AE2ImportExportCard.MODID)
 public class AE2ImportExportCard {
@@ -32,16 +29,11 @@ public class AE2ImportExportCard {
     public static final String EXPORT_CARD_ID = "export_card";
 
     public AE2ImportExportCard(IEventBus modEventBus) {
+        registerMenus();
+
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
-        modEventBus.addListener((RegisterEvent event) -> {
-            if (!event.getRegistryKey().equals(Registries.BLOCK)) {
-                return;
-            }
-
-            ModMenuTypes.init();
-        });
 
         modEventBus.addListener((RegisterPayloadHandlersEvent event) -> {
             PayloadRegistrar registrar = event.registrar(MODID);
@@ -51,6 +43,12 @@ public class AE2ImportExportCard {
 
         modEventBus.addListener(this::registerScreens);
         modEventBus.addListener(this::commonSetup);
+    }
+
+    @SuppressWarnings("unused")
+    static void registerMenus() {
+        var a = UpgradeContainerMenu.TYPE_IMPORT;
+        var b = UpgradeContainerMenu.TYPE_EXPORT;
     }
 
     public void registerScreens(final RegisterMenuScreensEvent event) {
