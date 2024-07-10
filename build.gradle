@@ -77,6 +77,7 @@ dependencies {
     implementation "curse.maven:ae2wirelessterminals-459929:5503178"
 
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
+    runtimeOnly "curse.maven:mekanism-268560:5496791"
 }
 
 tasks.withType(ProcessResources).configureEach {

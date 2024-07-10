@@ -26,7 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UpgradeHost implements IConfigurableObject {
-    public final ConfigInventory filterConfig = ConfigInventory.configTypes(18).changeListener(this::updateFilter).supportedTypes(AEKeyType.items()).build();
+    public final ConfigInventory filterConfig = ConfigInventory.configTypes(18)
+            .changeListener(this::updateFilter)
+            .build();
 
     private IConfigManager configManager;
 
