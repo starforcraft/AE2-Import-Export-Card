@@ -74,10 +74,9 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
 
     implementation "appeng:appliedenergistics2:${ae2_version}"
-    implementation "curse.maven:ae2wirelessterminals-459929:5503178"
+    implementation "curse.maven:ae2wirelessterminals-459929:5527543"
 
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
-    runtimeOnly "curse.maven:mekanism-268560:5496791"
 }
 
 tasks.withType(ProcessResources).configureEach {

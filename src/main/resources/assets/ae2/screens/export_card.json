@@ -1,7 +1,7 @@
 {
   "$schema": "schema.json",
   "includes": ["common/common.json", "common/player_inventory.json"],
-  "helpTopic": "items-blocks-machines/upgrade_cards.md",
+  "helpTopic": "ae2importexportcard-index.md",
   "background": {
     "texture": "ae2importexportcard:textures/gui/upgrade.png",
     "srcRect": [0, 0, 176, 163]

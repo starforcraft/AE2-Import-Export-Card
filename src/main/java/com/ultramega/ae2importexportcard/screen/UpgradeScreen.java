@@ -157,7 +157,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
     public static void renderSlotHighlight(GuiGraphics graphics, UpgradeType type, Font font, int x, int y, boolean checked, int filterIndex) {
         graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 300.0F);
+        graphics.pose().translate(0, 0, 390.0F);
 
         if (checked) {
             if (type == UpgradeType.IMPORT) {
