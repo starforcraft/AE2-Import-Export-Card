@@ -40,19 +40,14 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mixin(WirelessTerminalItem.class)
 public abstract class MixinWirelessTerminalItem extends Item {
-    @Shadow public abstract double getChargeRate(ItemStack stack);
-
     @Unique
     private Future<ICraftingPlan> ae2importExportCard$craftingJob;
 
@@ -225,7 +220,6 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                     int stackInteractionSize = upgradeInventory.isInstalled(AEItems.SPEED_CARD) ? AEFluidKey.AMOUNT_BUCKET * 64 : AEFluidKey.AMOUNT_BUCKET;
 
                                                     long extracted = StorageHelper.poweredExtraction(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), toExportKey, stackInteractionSize, source, Actionable.SIMULATE);
-
                                                     if(extracted <= 0) {
                                                         continue;
                                                     }
