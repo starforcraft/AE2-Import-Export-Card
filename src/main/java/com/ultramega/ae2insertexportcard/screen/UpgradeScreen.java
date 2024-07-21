@@ -35,6 +35,7 @@ import java.util.List;
 public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private static final ResourceLocation CHECKMARK = new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/gui/checkmark.png");
     private static final ResourceLocation XMARK = new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/gui/xmark.png");
+    private static final ResourceLocation MASS_SELECT = new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/gui/mass_select.png");
 
     private final UpgradeType type;
 
@@ -86,6 +87,8 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
                 }
             }
         }
+
+        renderMassSelect(graphics, leftPos + 8 + (16 * 10), topPos + 76);
     }
 
     @Override
@@ -115,22 +118,11 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
             if((!dragging || (slot.getItem().isEmpty() && slot.index == clickedSlotId)) && itemstack.isEmpty()) {
                 int slotId = slot.index - (18 + (type == UpgradeType.EXPORT ? 3 : 2));
 
-                if (this.type == UpgradeType.INSERT) {
-                    selectedInventorySlots[slotId] = selectedInventorySlots[slotId] == 0 ? 1 : 0;
-                } else {
-                    if (button == 0) {
-                        //Left click
-                        if (selectedInventorySlots[slotId] >= 18) {
-                            selectedInventorySlots[slotId] = 0;
-                        } else {
-                            selectedInventorySlots[slotId] += 1;
-                        }
-                    } else {
-                        //Right click
-                        selectedInventorySlots[slotId] = 0;
-                    }
+                if(button == 0) {
+                    increaseSelectedInventorySlot(type, slotId);
+                } else if(button == 1) {
+                    selectedInventorySlots[slotId] = 0;
                 }
-
                 sendUpdate();
             }
         }
@@ -139,7 +131,37 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
         dragging = false;
         clickedSlotId = -1;
 
+        // Check mass select buttons
+        boolean clickedStorage = isHovering(9 + (16 * 10), 77, 4, 5, mouseX, mouseY);
+        boolean clickedHotbar = isHovering(9 + (16 * 10), 77 + (16 * 3) + 10, 4, 5, mouseX, mouseY);
+
+        if (clickedStorage || clickedHotbar) {
+            int start = clickedHotbar ? 0 : 9;
+            int end = clickedHotbar ? 9 : 36;
+
+            for (int i = start; i < end; i++) {
+                if (button == 0) {
+                    increaseSelectedInventorySlot(type, i);
+                } else if (button == 1) {
+                    selectedInventorySlots[i] = 0;
+                }
+            }
+            sendUpdate();
+        }
+
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private void increaseSelectedInventorySlot(UpgradeType type, int index) {
+        if(type == UpgradeType.EXPORT) {
+            if (selectedInventorySlots[index] >= 18) {
+                selectedInventorySlots[index] = 0;
+            } else {
+                selectedInventorySlots[index] += 1;
+            }
+        } else {
+            selectedInventorySlots[index] = selectedInventorySlots[index] == 0 ? 1 : 0;
+        }
     }
 
     @Override
@@ -159,13 +181,23 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
         if (checked) {
             if (type == UpgradeType.INSERT) {
-                graphics.blit(CHECKMARK, x + 7, y, 0, 0, 9, 8, 9, 8);
+                graphics.blit(CHECKMARK, x, y, 0, 0, 16, 16, 16, 16);
             } else {
                 graphics.drawString(font, String.valueOf(filterIndex), x + 16 - font.width(String.valueOf(filterIndex)), y, Color.GREEN.hashCode());
             }
         } else {
-            graphics.blit(XMARK, x + 9, y, 0, 0, 7, 7, 7, 7);
+            graphics.blit(XMARK, x, y, 0, 0, 16, 16, 16, 16);
         }
+
+        graphics.pose().popPose();
+    }
+
+    public static void renderMassSelect(GuiGraphics graphics, int x, int y) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 300.0F);
+
+        graphics.blit(MASS_SELECT, x, y, 0, 0, 16, 16, 16, 16);
+        graphics.blit(MASS_SELECT, x, y + (16 * 3) + 10, 0, 0, 16, 16, 16, 16);
 
         graphics.pose().popPose();
     }

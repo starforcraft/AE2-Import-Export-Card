@@ -115,13 +115,15 @@ dependencies {
 
     implementation fg.deobf("appeng:appliedenergistics2-forge:${ae2_version}")
 
-    implementation fg.deobf('curse.maven:aeinfinitybooster-559313:4869749')
     implementation fg.deobf('curse.maven:ae2wirelessterminals-459929:5217955')
-    implementation fg.deobf('curse.maven:powah-633483:4638301')
-    implementation fg.deobf('curse.maven:curios-309927:4583413')
-    implementation fg.deobf('curse.maven:cloth-348521:4633444')
-    implementation fg.deobf('curse.maven:architectury-419699:4663010')
-    implementation fg.deobf('curse.maven:libx-412525:4606863')
+    runtimeOnly fg.deobf('curse.maven:aeinfinitybooster-559313:4869749')
+    runtimeOnly fg.deobf('curse.maven:largefluidtank-291006:4810355')
+    runtimeOnly fg.deobf('curse.maven:scalablecatsforce-320926:4810184')
+    runtimeOnly fg.deobf('curse.maven:powah-633483:4638301')
+    runtimeOnly fg.deobf('curse.maven:curios-309927:4583413')
+    runtimeOnly fg.deobf('curse.maven:cloth-348521:4633444')
+    runtimeOnly fg.deobf('curse.maven:architectury-419699:4663010')
+    runtimeOnly fg.deobf('curse.maven:libx-412525:4606863')
 }
 
 jar {

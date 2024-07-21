@@ -6,6 +6,7 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.CalculationStrategy;
 import appeng.api.networking.crafting.ICraftingPlan;
 import appeng.api.networking.security.IActionSource;
+import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
@@ -21,7 +22,6 @@ import appeng.me.helpers.PlayerSource;
 import appeng.util.ConfigInventory;
 import com.ultramega.ae2insertexportcard.AE2InsertExportCard;
 import com.ultramega.ae2insertexportcard.item.UpgradeHost;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -34,12 +34,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -67,7 +70,7 @@ public class MixinWirelessTerminalItem extends Item {
 
         //Check if in access point range
         boolean inRange = false;
-        IGrid grid = null;
+        IGrid grid;
         WirelessTerminalMenuHost host = null;
 
         if(stack.getItem() instanceof WirelessTerminalItem wirelessTerminalItem) {
@@ -77,11 +80,13 @@ public class MixinWirelessTerminalItem extends Item {
                 host = menuHost;
                 inRange = host.rangeCheck();
             }
+        } else {
+            grid = null;
         }
 
         if(!inRange) return;
 
-        if(stack.getTag().contains("upgrades")) {
+        if(stack.getTag().contains("upgrades") && grid != null) {
             ListTag tagList = stack.getTag().getList("upgrades", Tag.TAG_COMPOUND);
 
             for (int i = 0; i < tagList.size(); i++) {
@@ -119,74 +124,131 @@ public class MixinWirelessTerminalItem extends Item {
                                 IActionSource source = new PlayerSource(player);
 
                                 if (isInsertUpgrade) {
-                                    for(Object2LongMap.Entry<AEKey> filter : filterConfig.getAvailableStacks()) {
-                                        AEKey what = AEItemKey.of(itemInInventory);
-                                        if(what != null && grid != null && grid.getStorageService() != null) {
-                                            boolean successful = false;
-                                            if(upgrades.isInstalled(AEItems.FUZZY_CARD) ? invertFilter != what.fuzzyEquals(filter.getKey(), fuzzyMode) : invertFilter != what.equals(filter.getKey())) {
-                                                long amount = StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), what, itemInInventory.getCount(), source, Actionable.SIMULATE);
-                                                if (amount <= 0) return;
-                                                successful = true;
-                                            }
+                                    AEKey what = AEItemKey.of(itemInInventory);
+                                    if(what != null && grid.getStorageService() != null) {
+                                        // TODO: This (whole class) can definitely be improved to be more efficient and readable but this will be the last update for 1.20.1 soo this will never happen like me getting bitc~
 
-                                            if(successful) {
-                                                StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), what, itemInInventory.getCount(), source, Actionable.MODULATE);
-                                                player.getInventory().setItem(j, ItemStack.EMPTY);
-                                                player.containerMenu.broadcastChanges();
+                                        // Import Fluids
+                                        for(int index = 0; index < filterConfig.size(); index++) {
+                                            GenericStack filter = filterConfig.getStack(index);
+                                            if(filter != null && filter.what() instanceof AEFluidKey) {
+                                                itemInInventory.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent((fluidItem -> {
+                                                    FluidStack fluidStack = fluidItem.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+                                                    if(fluidStack.isEmpty()) return;
+
+                                                    AEFluidKey aeFluidKey = AEFluidKey.of(fluidStack);
+                                                    if(aeFluidKey == null) return;
+
+                                                    long amount = StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), aeFluidKey, fluidStack.getAmount(), source, Actionable.SIMULATE);
+                                                    if (amount <= 0) return;
+
+                                                    fluidItem.drain((int)amount, IFluidHandler.FluidAction.EXECUTE);
+                                                    StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), aeFluidKey, amount, source, Actionable.MODULATE);
+                                                    player.containerMenu.broadcastChanges();
+                                                }));
                                             }
+                                        }
+
+                                        // Import Items
+                                        final FuzzyMode finalFuzzyMode = fuzzyMode;
+                                        if(invertFilter != filterConfig.getAvailableStacks().findFuzzy(what, fuzzyMode).stream().anyMatch(filterKeyEntry -> upgrades.isInstalled(AEItems.FUZZY_CARD) ? what.fuzzyEquals(filterKeyEntry.getKey(), finalFuzzyMode) : what.equals(filterKeyEntry.getKey()))) {
+                                            long amount = StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), what, itemInInventory.getCount(), source, Actionable.SIMULATE);
+                                            if (amount <= 0) continue;
+
+                                            StorageHelper.poweredInsert(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), what, itemInInventory.getCount(), source, Actionable.MODULATE);
+                                            player.getInventory().setItem(j, ItemStack.EMPTY);
+                                            player.containerMenu.broadcastChanges();
                                         }
                                     }
                                 } else {
                                     for(int index = 0; index < filterConfig.size(); index++) {
-                                        @Nullable GenericStack filter = filterConfig.getStack(index);
+                                        GenericStack filter = filterConfig.getStack(index);
                                         if (filter == null) continue;
                                         if (index != selectedInventorySlots[j] - 1) continue;
 
                                         Optional<IItemHandler> playerInventory = player.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).resolve();
                                         if (playerInventory.isPresent()) {
                                             AEItemKey what = AEItemKey.of(itemInInventory.getItem());
-                                            if(itemInInventory.isEmpty() || (upgrades.isInstalled(AEItems.FUZZY_CARD) ? what.fuzzyEquals(filter.what(), fuzzyMode) : what.equals(filter.what()))) {
-                                                int extractAmount = Math.min(itemInInventory.getMaxStackSize() - itemInInventory.getCount(), itemInInventory.getMaxStackSize());
+                                            boolean acceptsFluid = false;
 
-                                                int stackInteractionSize = upgrades.isInstalled(AEItems.SPEED_CARD) ? 64 : 1;
+                                            var cap = itemInInventory.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).cast();
+                                            if(cap.isPresent()) {
+                                                acceptsFluid = true;
+                                            }
 
-                                                int size = Math.min(stackInteractionSize, extractAmount);
+                                            if(acceptsFluid || itemInInventory.isEmpty() || (upgrades.isInstalled(AEItems.FUZZY_CARD) ? what.fuzzyEquals(filter.what(), fuzzyMode) : what.equals(filter.what()))) {
+                                                AEKey toExportKey;
+                                                if(upgrades.isInstalled(AEItems.FUZZY_CARD)) {
+                                                    var fuzzy = grid.getStorageService().getCachedInventory()
+                                                            .findFuzzy(filter.what(), fuzzyMode)
+                                                            .stream().findFirst();
+                                                    toExportKey = fuzzy.map(Map.Entry::getKey).orElse(null);
+                                                } else {
+                                                    toExportKey = filter.what();
+                                                }
+                                                if(toExportKey != null) {
+                                                    if(!acceptsFluid && toExportKey instanceof AEItemKey fuzzyItem) {
+                                                        int extractAmount = Math.min(itemInInventory.getMaxStackSize() - itemInInventory.getCount(), itemInInventory.getMaxStackSize());
+                                                        int stackInteractionSize = upgrades.isInstalled(AEItems.SPEED_CARD) ? 64 : 1;
+                                                        int size = Math.min(stackInteractionSize, extractAmount);
 
-                                                if(size <= 0) continue;
+                                                        if(size <= 0) continue;
 
-                                                long extracted = StorageHelper.poweredExtraction(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), filter.what(), size, source, Actionable.MODULATE);
-                                                if(extracted <= 0) {
-                                                    if(upgrades.isInstalled(AEItems.CRAFTING_CARD)) {
-                                                        var craftingService = grid.getCraftingService();
-                                                        if(craftingService.isCraftable(filter.what()) && craftingService.getRequestedAmount(filter.what()) <= 0) {
-                                                            var src = new MachineSource(grid::getPivot);
+                                                        long extracted = StorageHelper.poweredExtraction(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), toExportKey, size, source, Actionable.MODULATE);
+                                                        if(extracted <= 0) {
+                                                            if(upgrades.isInstalled(AEItems.CRAFTING_CARD)) {
+                                                                var craftingService = grid.getCraftingService();
+                                                                if(craftingService.isCraftable(filter.what()) && craftingService.getRequestedAmount(filter.what()) <= 0) {
+                                                                    var src = new MachineSource(grid::getPivot);
 
-                                                            if(ae2insertExportCard$craftingJob != null) {
-                                                                try {
-                                                                    ICraftingPlan job = null;
-                                                                    if (ae2insertExportCard$craftingJob.isDone()) {
-                                                                        job = ae2insertExportCard$craftingJob.get();
+                                                                    if(ae2insertExportCard$craftingJob != null) {
+                                                                        try {
+                                                                            ICraftingPlan job = null;
+                                                                            if (ae2insertExportCard$craftingJob.isDone()) {
+                                                                                job = ae2insertExportCard$craftingJob.get();
+                                                                            }
+
+                                                                            // Check if job is complete
+                                                                            if (job != null) {
+                                                                                craftingService.submitJob(job, null, null, false, src);
+
+                                                                                this.ae2insertExportCard$craftingJob = null;
+                                                                            }
+                                                                        } catch (InterruptedException | ExecutionException ignored) {
+                                                                        }
                                                                     }
 
-                                                                    // Check if job is complete
-                                                                    if (job != null) {
-                                                                        craftingService.submitJob(job, null, null, false, src);
-
-                                                                        this.ae2insertExportCard$craftingJob = null;
-                                                                    }
-                                                                } catch (InterruptedException | ExecutionException ignored) {
+                                                                    this.ae2insertExportCard$craftingJob = craftingService.beginCraftingCalculation(level, () -> src, filter.what(), size, CalculationStrategy.CRAFT_LESS);
                                                                 }
                                                             }
 
-                                                            this.ae2insertExportCard$craftingJob = craftingService.beginCraftingCalculation(level, () -> src, filter.what(), size, CalculationStrategy.CRAFT_LESS);
+                                                            continue;
                                                         }
+
+                                                        playerInventory.get().insertItem(j, fuzzyItem.toStack((int) extracted), false);
+                                                        player.containerMenu.broadcastChanges();
+                                                    } else if(acceptsFluid && toExportKey instanceof AEFluidKey fuzzyFluid) {
+                                                        int stackInteractionSize = upgrades.isInstalled(AEItems.SPEED_CARD) ? AEFluidKey.AMOUNT_BUCKET * 64 : AEFluidKey.AMOUNT_BUCKET;
+
+                                                        long extracted = StorageHelper.poweredExtraction(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), toExportKey, stackInteractionSize, source, Actionable.SIMULATE);
+                                                        if(extracted <= 0) {
+                                                            continue;
+                                                        }
+
+                                                        cap.ifPresent((o -> {
+                                                            if(o instanceof IFluidHandlerItem fluidItem) {
+                                                                int amount = fluidItem.fill(fuzzyFluid.toStack((int) extracted), IFluidHandler.FluidAction.SIMULATE);
+                                                                if(amount <= 0) {
+                                                                    return;
+                                                                }
+
+                                                                StorageHelper.poweredExtraction(new ChannelPowerSrc(node, grid.getEnergyService()), grid.getStorageService().getInventory(), toExportKey, amount, source, Actionable.MODULATE);
+                                                                fluidItem.fill(fuzzyFluid.toStack(amount), IFluidHandler.FluidAction.EXECUTE);
+                                                                player.containerMenu.broadcastChanges();
+                                                            }
+                                                        }));
                                                     }
-
-                                                    continue;
                                                 }
-
-                                                playerInventory.get().insertItem(j, new ItemStack(filter.what().wrapForDisplayOrFilter().getItem(), (int)extracted), false);
-                                                player.containerMenu.broadcastChanges();
                                             }
                                         }
                                     }
