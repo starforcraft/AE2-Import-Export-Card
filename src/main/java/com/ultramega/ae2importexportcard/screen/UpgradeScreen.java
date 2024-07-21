@@ -1,5 +1,9 @@
 package com.ultramega.ae2importexportcard.screen;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.upgrades.Upgrades;
@@ -30,13 +34,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-
 public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private static final ResourceLocation CHECKMARK = ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/checkmark.png");
     private static final ResourceLocation XMARK = ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/xmark.png");
+    private static final ResourceLocation MASS_SELECT = ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/mass_select.png");
 
     private final UpgradeType type;
 
@@ -88,6 +89,8 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
                 }
             }
         }
+
+        renderMassSelect(graphics, leftPos + 8 + (16 * 10), topPos + 76);
     }
 
     @Override
@@ -117,22 +120,11 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
             if((!dragging || (slot.getItem().isEmpty() && slot.index == clickedSlotId)) && itemstack.isEmpty()) {
                 int slotId = slot.index - (18 + (type == UpgradeType.EXPORT ? 3 : 2));
 
-                if (this.type == UpgradeType.IMPORT) {
-                    selectedInventorySlots[slotId] = selectedInventorySlots[slotId] == 0 ? 1 : 0;
-                } else {
-                    if (button == 0) {
-                        //Left click
-                        if (selectedInventorySlots[slotId] >= 18) {
-                            selectedInventorySlots[slotId] = 0;
-                        } else {
-                            selectedInventorySlots[slotId] += 1;
-                        }
-                    } else {
-                        //Right click
-                        selectedInventorySlots[slotId] = 0;
-                    }
+                if(button == 0) {
+                    increaseSelectedInventorySlot(type, slotId);
+                } else if(button == 1) {
+                    selectedInventorySlots[slotId] = 0;
                 }
-
                 sendUpdate();
             }
         }
@@ -141,7 +133,37 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
         dragging = false;
         clickedSlotId = -1;
 
+        // Check mass select buttons
+        boolean clickedStorage = isHovering(9 + (16 * 10), 77, 4, 5, mouseX, mouseY);
+        boolean clickedHotbar = isHovering(9 + (16 * 10), 77 + (16 * 3) + 10, 4, 5, mouseX, mouseY);
+
+        if (clickedStorage || clickedHotbar) {
+            int start = clickedHotbar ? 0 : 9;
+            int end = clickedHotbar ? 9 : 36;
+
+            for (int i = start; i < end; i++) {
+                if (button == 0) {
+                    increaseSelectedInventorySlot(type, i);
+                } else if (button == 1) {
+                    selectedInventorySlots[i] = 0;
+                }
+            }
+            sendUpdate();
+        }
+
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private void increaseSelectedInventorySlot(UpgradeType type, int index) {
+        if(type == UpgradeType.EXPORT) {
+            if (selectedInventorySlots[index] >= 18) {
+                selectedInventorySlots[index] = 0;
+            } else {
+                selectedInventorySlots[index] += 1;
+            }
+        } else {
+            selectedInventorySlots[index] = selectedInventorySlots[index] == 0 ? 1 : 0;
+        }
     }
 
     @Override
@@ -157,7 +179,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
     public static void renderSlotHighlight(GuiGraphics graphics, UpgradeType type, Font font, int x, int y, boolean checked, int filterIndex) {
         graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 390.0F);
+        graphics.pose().translate(0, 0, 300.0F);
 
         if (checked) {
             if (type == UpgradeType.IMPORT) {
@@ -168,6 +190,16 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
         } else {
             graphics.blit(XMARK, x, y, 0, 0, 16, 16, 16, 16);
         }
+
+        graphics.pose().popPose();
+    }
+
+    public static void renderMassSelect(GuiGraphics graphics, int x, int y) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 300.0F);
+
+        graphics.blit(MASS_SELECT, x, y, 0, 0, 16, 16, 16, 16);
+        graphics.blit(MASS_SELECT, x, y + (16 * 3) + 10, 0, 0, 16, 16, 16, 16);
 
         graphics.pose().popPose();
     }
