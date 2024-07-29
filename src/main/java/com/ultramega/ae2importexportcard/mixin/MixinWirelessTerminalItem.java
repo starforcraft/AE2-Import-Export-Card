@@ -24,6 +24,8 @@ import appeng.me.helpers.MachineSource;
 import appeng.me.helpers.PlayerSource;
 import appeng.menu.locator.MenuLocators;
 import appeng.util.ConfigInventory;
+import com.ultramega.ae2importexportcard.AE2ImportExportCard;
+import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtils;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -69,7 +71,9 @@ public abstract class MixinWirelessTerminalItem extends Item {
         WirelessTerminalMenuHost<?> host = null;
 
         if(stack.getItem() instanceof WirelessTerminalItem wirelessTerminalItem) {
-            grid = wirelessTerminalItem.getLinkedGrid(stack, level, null);
+            grid = AE2ImportExportCard.AE2WTLIB_INSTALLED
+                    ? Ae2WtlibUtils.getGridFromStack(wirelessTerminalItem, player, stack)
+                    : wirelessTerminalItem.getLinkedGrid(stack, level, null);
 
             if(wirelessTerminalItem.getMenuHost(player, MenuLocators.forStack(stack), null) instanceof WirelessTerminalMenuHost<?> menuHost) {
                 host = menuHost;
@@ -113,7 +117,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
                             if (isImportUpgrade) {
                                 AEKey what = AEItemKey.of(itemInInventory);
                                 if(what != null && grid.getStorageService() != null) {
-                                    // TODO: This (whole class) can definitely be improved to be more efficient and readable
+                                    // TODO: This (whole class) can definitely be improved to be more efficient and readable, let's see if I will ever do it
 
                                     // Import Fluids
                                     for(int index = 0; index < filterConfig.size(); index++) {

@@ -11,7 +11,7 @@ import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
 import com.ultramega.ae2importexportcard.screen.UpgradeScreen;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
-import de.mari_023.ae2wtlib.AE2wtlibItems;
+import de.mari_023.ae2wtlib.api.AE2wtlibAPI;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
@@ -27,6 +27,8 @@ public class AE2ImportExportCard {
 
     public static final String IMPORT_CARD_ID = "import_card";
     public static final String EXPORT_CARD_ID = "export_card";
+
+    public static boolean AE2WTLIB_INSTALLED = false;
 
     public AE2ImportExportCard(IEventBus modEventBus) {
         registerMenus();
@@ -62,8 +64,10 @@ public class AE2ImportExportCard {
         Upgrades.add(ModItems.IMPORT_CARD.get(), AEItems.WIRELESS_CRAFTING_TERMINAL, 1);
         Upgrades.add(ModItems.EXPORT_CARD.get(), AEItems.WIRELESS_CRAFTING_TERMINAL, 1);
         if(ModList.get().isLoaded("ae2wtlib")) {
-            Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibItems.UNIVERSAL_TERMINAL, 1);
-            Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibItems.UNIVERSAL_TERMINAL, 1);
+            AE2WTLIB_INSTALLED = true;
+
+            Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
+            Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
         }
 
         Upgrades.add(AEItems.FUZZY_CARD, ModItems.IMPORT_CARD.get(), 1);

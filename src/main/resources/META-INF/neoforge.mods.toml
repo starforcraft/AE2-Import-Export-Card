@@ -23,6 +23,14 @@ config="${mod_id}.mixins.json"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
+    modId = "ae2wtlib"
+    type="INCOMPATIBLE"
+    versionRange = "(,19.1.0-alpha)"
+    ordering = "NONE"
+    side = "BOTH"
+    reason = "breaking changes in the ae2wtlib api"
+
+[[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"
     versionRange="${neo_version_range}"

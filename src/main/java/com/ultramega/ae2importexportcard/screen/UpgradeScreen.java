@@ -1,9 +1,5 @@
 package com.ultramega.ae2importexportcard.screen;
 
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
-
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.upgrades.Upgrades;
@@ -24,15 +20,22 @@ import com.ultramega.ae2importexportcard.network.LockSlotUpdateData;
 import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private static final ResourceLocation CHECKMARK = ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/checkmark.png");
@@ -126,6 +129,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
                     selectedInventorySlots[slotId] = 0;
                 }
                 sendUpdate();
+                playClickSound();
             }
         }
 
@@ -149,6 +153,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
                 }
             }
             sendUpdate();
+            playClickSound();
         }
 
         return super.mouseReleased(mouseX, mouseY, button);
@@ -206,6 +211,10 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
     public void sendUpdate() {
         PacketDistributor.sendToServer(new UpgradeUpdateData(type.getId(), new IntArrayList(selectedInventorySlots)));
+    }
+
+    private void playClickSound() {
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
     }
 
     private List<Component> getCompatibleUpgrades() {

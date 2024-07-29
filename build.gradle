@@ -12,16 +12,11 @@ group = mod_group_id
 repositories {
     mavenLocal()
     maven {
-        url "https://www.cursemaven.com"
-        content {
-            includeGroup "curse.maven"
-        }
-    }
-    maven {
         name "Modmaven"
         url "https://modmaven.dev/"
         content {
             includeGroup 'appeng'
+            includeGroup "de.mari_023"
         }
     }
     maven {
@@ -74,7 +69,9 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
 
     implementation "appeng:appliedenergistics2:${ae2_version}"
-    implementation "curse.maven:ae2wirelessterminals-459929:5527543"
+
+    implementation("de.mari_023:ae2wtlib_api:${ae2wtlib_version}")
+    runtimeOnly("de.mari_023:ae2wtlib:${ae2wtlib_version}")
 
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
 }
@@ -88,6 +85,7 @@ tasks.withType(ProcessResources).configureEach {
             loader_version_range   : loader_version_range,
             ae2_version            : ae2_version,
             ae2_version_range      : ae2_version_range,
+            ae2wtlib_version       : ae2wtlib_version,
             emi_version            : emi_version,
             mod_id                 : mod_id,
             mod_name               : mod_name,

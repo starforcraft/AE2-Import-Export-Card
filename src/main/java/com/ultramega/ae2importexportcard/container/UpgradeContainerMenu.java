@@ -20,15 +20,18 @@ import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.item.UpgradeHost;
 import com.ultramega.ae2importexportcard.registry.ModSlotSemantics;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.ItemLike;
 
+import static com.ultramega.ae2importexportcard.AE2ImportExportCard.MODID;
+
 public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     public static final MenuType<UpgradeContainerMenu> TYPE_IMPORT = MenuTypeBuilder.create((id, inventory, host) -> new UpgradeContainerMenu(UpgradeType.IMPORT, id, inventory, host, new UpgradeHost(UpgradeType.IMPORT, id, inventory, host)), WirelessTerminalMenuHost.class)
-            .build(AE2ImportExportCard.IMPORT_CARD_ID);
+            .build(ResourceLocation.fromNamespaceAndPath(MODID, AE2ImportExportCard.IMPORT_CARD_ID));
     public static final MenuType<UpgradeContainerMenu> TYPE_EXPORT = MenuTypeBuilder.create((id, inventory, host) -> new UpgradeContainerMenu(UpgradeType.EXPORT, id, inventory, host, new UpgradeHost(UpgradeType.EXPORT, id, inventory, host)), WirelessTerminalMenuHost.class)
-            .build(AE2ImportExportCard.EXPORT_CARD_ID);
+            .build(ResourceLocation.fromNamespaceAndPath(MODID, AE2ImportExportCard.EXPORT_CARD_ID));
 
     private final UpgradeType type;
     private final WirelessTerminalMenuHost host;
