@@ -1,0 +1,7 @@
+{
+	"itemGroup.ae2importexportcard" : "AE2 Import Export Card",
+	"item.ae2importexportcard.import_card": "İçe Aktarım Kartı",
+	"item.ae2importexportcard.export_card": "Dışa Aktarım Kartı",
+	"gui.ae2importexportcard.whitelist": "Beyaz Liste",
+	"gui.ae2importexportcard.blacklist": "Kara Liste"
+}
