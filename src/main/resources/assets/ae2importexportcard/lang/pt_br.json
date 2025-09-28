@@ -1,7 +1,7 @@
 {
-	"itemGroup.ae2insertexportcard" : "Cartão Inserção/Exportação AE2",
-	"item.ae2insertexportcard.insert_card": "Inserir Cartão",
-	"item.ae2insertexportcard.export_card": "Exportar Cartão",
-	"gui.ae2insertexportcard.whitelist": "Lista Branca",
-	"gui.ae2insertexportcard.blacklist": "Lista Negra"
+    "itemGroup.ae2importexportcard" : "Cartão de Importação/Exportação para AE2",
+    "item.ae2importexportcard.import_card": "Cartão de Importação",
+    "item.ae2importexportcard.export_card": "Cartão de Exportação",
+    "gui.ae2importexportcard.whitelist": "Lista Branca",
+    "gui.ae2importexportcard.blacklist": "Lista Negra"
 }
