@@ -13,13 +13,15 @@ public class CardPlayerSlot extends Slot {
         super(inventory, invSlot, 0, 0);
     }
 
+    @Override
     public boolean mayPlace(@NotNull ItemStack stack) {
         return true;
     }
 
+    @Override
     public boolean mayPickup(@NotNull Player player) {
-        if(cancelPickup) {
-            cancelPickup = false;
+        if (this.cancelPickup) {
+            this.cancelPickup = false;
             return false;
         } else {
             return true;

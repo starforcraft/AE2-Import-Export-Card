@@ -9,9 +9,9 @@ import net.minecraft.world.item.ItemStack;
 
 public class Ae2WtlibUtils {
     public static IGrid getGridFromStack(WirelessTerminalItem wirelessTerminalItem, Player player, ItemStack stack) {
-        if(wirelessTerminalItem.getMenuHost(player, MenuLocators.forStack(stack), null) instanceof WTMenuHost menuHost) {
+        if (wirelessTerminalItem.getMenuHost(player, MenuLocators.forStack(stack), null) instanceof WTMenuHost menuHost) {
             var node = menuHost.getActionableNode();
-            if(node != null) {
+            if (node != null) {
                 return node.getGrid();
             }
         }

@@ -1,8 +1,5 @@
 package com.ultramega.ae2importexportcard;
 
-import appeng.api.upgrades.Upgrades;
-import appeng.core.definitions.AEItems;
-import appeng.init.client.InitScreens;
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
 import com.ultramega.ae2importexportcard.network.LockSlotUpdateData;
 import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
@@ -11,6 +8,10 @@ import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
 import com.ultramega.ae2importexportcard.screen.UpgradeScreen;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
+
+import appeng.api.upgrades.Upgrades;
+import appeng.core.definitions.AEItems;
+import appeng.init.client.InitScreens;
 import de.mari_023.ae2wtlib.api.AE2wtlibAPI;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
@@ -63,7 +64,7 @@ public class AE2ImportExportCard {
         Upgrades.add(ModItems.EXPORT_CARD.get(), AEItems.WIRELESS_TERMINAL, 1);
         Upgrades.add(ModItems.IMPORT_CARD.get(), AEItems.WIRELESS_CRAFTING_TERMINAL, 1);
         Upgrades.add(ModItems.EXPORT_CARD.get(), AEItems.WIRELESS_CRAFTING_TERMINAL, 1);
-        if(ModList.get().isLoaded("ae2wtlib")) {
+        if (ModList.get().isLoaded("ae2wtlib")) {
             AE2WTLIB_INSTALLED = true;
 
             Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);

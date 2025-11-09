@@ -1,7 +1,8 @@
 package com.ultramega.ae2importexportcard.registry;
 
-import appeng.api.upgrades.Upgrades;
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
+
+import appeng.api.upgrades.Upgrades;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;

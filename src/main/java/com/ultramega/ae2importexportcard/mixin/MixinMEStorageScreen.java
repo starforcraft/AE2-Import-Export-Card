@@ -1,5 +1,6 @@
 package com.ultramega.ae2importexportcard.mixin;
 
+import appeng.api.storage.ITerminalHost;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.me.common.MEStorageScreen;
 import appeng.client.gui.style.ScreenStyle;
@@ -25,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinMEStorageScreen extends AEBaseScreen {
     @Unique
     @Final
-    private UpgradeItemButton[] ae2importExportCard$upgradeCardButton = new UpgradeItemButton[2];
+    private final UpgradeItemButton[] ae2importExportCard$upgradeCardButton = new UpgradeItemButton[2];
 
     public MixinMEStorageScreen(AEBaseMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
@@ -33,24 +34,29 @@ public abstract class MixinMEStorageScreen extends AEBaseScreen {
 
     @Inject(at = @At("TAIL"), method = "<init>")
     protected void MEStorageScreenConstructor(MEStorageMenu menu, Inventory playerInventory, Component title, ScreenStyle style, CallbackInfo ci) {
-        if(menu.getType().equals(MEStorageMenu.WIRELESS_TYPE) || menu instanceof CraftingTermMenu) {
-            ae2importExportCard$upgradeCardButton[0] = new UpgradeItemButton(btn -> ((UpgradeInterface) ((MEStorageScreen<?>) (Object) this).getMenu()).ae2ImportExportCard$openMenu(UpgradeType.IMPORT),
-                    ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/import_card.png"));
-            addToLeftToolbar(ae2importExportCard$upgradeCardButton[0]);
-            ae2importExportCard$upgradeCardButton[0].setMessage(Component.translatable(ModItems.IMPORT_CARD.get().getDescriptionId()));
+        if (menu.getType().equals(MEStorageMenu.WIRELESS_TYPE) || menu instanceof CraftingTermMenu) {
+            final UpgradeInterface upgradeInterface = ((UpgradeInterface) ((MEStorageScreen<?>) (Object) this).getMenu());
 
-            ae2importExportCard$upgradeCardButton[1] = new UpgradeItemButton(btn -> ((UpgradeInterface) ((MEStorageScreen<?>) (Object) this).getMenu()).ae2ImportExportCard$openMenu(UpgradeType.EXPORT),
+            this.ae2importExportCard$upgradeCardButton[0] = new UpgradeItemButton(btn -> upgradeInterface.ae2ImportExportCard$openMenu(UpgradeType.IMPORT),
+                    ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/import_card.png"));
+            this.addToLeftToolbar(this.ae2importExportCard$upgradeCardButton[0]);
+            this.ae2importExportCard$upgradeCardButton[0].setMessage(Component.translatable(ModItems.IMPORT_CARD.get().getDescriptionId()));
+
+            this.ae2importExportCard$upgradeCardButton[1] = new UpgradeItemButton(btn -> upgradeInterface.ae2ImportExportCard$openMenu(UpgradeType.EXPORT),
                     ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/export_card.png"));
-            addToLeftToolbar(ae2importExportCard$upgradeCardButton[1]);
-            ae2importExportCard$upgradeCardButton[1].setMessage(Component.translatable(ModItems.EXPORT_CARD.get().getDescriptionId()));
+            this.addToLeftToolbar(this.ae2importExportCard$upgradeCardButton[1]);
+            this.ae2importExportCard$upgradeCardButton[1].setMessage(Component.translatable(ModItems.EXPORT_CARD.get().getDescriptionId()));
         }
     }
 
     @Inject(at = @At("TAIL"), method = "updateBeforeRender")
     protected void updateBeforeRender(CallbackInfo ci) {
-        if(ae2importExportCard$upgradeCardButton[0] != null) {
-            ae2importExportCard$upgradeCardButton[0].setVisibility(((MEStorageScreen<?>) (Object) this).getMenu().getHost().getInstalledUpgrades(ModItems.IMPORT_CARD.get()) > 0);
-            ae2importExportCard$upgradeCardButton[1].setVisibility(((MEStorageScreen<?>) (Object) this).getMenu().getHost().getInstalledUpgrades(ModItems.EXPORT_CARD.get()) > 0);
+        final ITerminalHost host = ((MEStorageScreen<?>) (Object) this).getMenu().getHost();
+        if (this.ae2importExportCard$upgradeCardButton[0] != null) {
+            this.ae2importExportCard$upgradeCardButton[0].setVisibility(host.getInstalledUpgrades(ModItems.IMPORT_CARD.get()) > 0);
+        }
+        if (this.ae2importExportCard$upgradeCardButton[1] != null) {
+            this.ae2importExportCard$upgradeCardButton[1].setVisibility(host.getInstalledUpgrades(ModItems.EXPORT_CARD.get()) > 0);
         }
     }
 }

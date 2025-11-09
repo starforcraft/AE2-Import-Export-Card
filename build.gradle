@@ -1,9 +1,13 @@
 plugins {
     id 'java-library'
-    id 'eclipse'
-    id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.153'
+    id 'net.neoforged.moddev' version '2.0.116'
+    id 'idea'
+    id 'me.modmuss50.mod-publish-plugin' version '1.0.0'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
 }
 
 version = mod_version
@@ -15,7 +19,7 @@ repositories {
         name "Modmaven"
         url "https://modmaven.dev/"
         content {
-            includeGroup 'appeng'
+            includeGroup 'org.appliedenergistics'
             includeGroup "de.mari_023"
         }
     }
@@ -31,31 +35,48 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-minecraft.accessTransformers.file rootProject.file('src/main/resources/META-INF/accesstransformer.cfg')
+neoForge {
+    version = project.neo_version
 
-runs {
-    configureEach {
-        systemProperty 'forge.logging.markers', 'REGISTRIES'
-        systemProperty 'forge.logging.console.level', 'debug'
-
-        modSource project.sourceSets.main
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
     }
 
-    client {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    accessTransformers = project.files('src/main/templates/META-INF/accesstransformer.cfg')
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
     }
 
-    server {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        programArgument '--nogui'
-    }
-
-    gameTestServer {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-    }
-
-    data {
-        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
     }
 }
 
@@ -66,17 +87,35 @@ configurations {
 }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${neo_version}"
+    implementation "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
-    implementation "appeng:appliedenergistics2:${ae2_version}"
-
-    implementation("de.mari_023:ae2wtlib_api:${ae2wtlib_version}")
-    runtimeOnly("de.mari_023:ae2wtlib:${ae2wtlib_version}")
+    implementation "de.mari_023:ae2wtlib_api:${ae2wtlib_version}"
+    runtimeOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
 
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
 }
 
-tasks.withType(ProcessResources).configureEach {
+publishMods {
+    changelog = current_changelog
+    type = STABLE
+    modLoaders.add("neoforge")
+    file = jar.archiveFile
+
+    curseforge {
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        projectId = "982512"
+        minecraftVersions.add(minecraft_version)
+        displayName = file.map { it.asFile.name }
+    }
+
+    modrinth {
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        projectId = "qelfSMnn"
+        minecraftVersions.add(minecraft_version)
+    }
+}
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
@@ -93,15 +132,18 @@ tasks.withType(ProcessResources).configureEach {
             mod_license            : mod_license,
             mod_issue_tracker      : mod_issue_tracker,
             mod_version            : mod_version,
+            current_changelog      : current_changelog,
             mod_authors            : mod_authors,
             mod_description        : mod_description
     ]
     inputs.properties replaceProperties
-
-    filesMatching(['META-INF/neoforge.mods.toml']) {
-        expand replaceProperties
-    }
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
 }
+
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'

@@ -29,19 +29,19 @@ public abstract class MixinMEStorageMenu extends AEBaseMenu implements UpgradeIn
 
     @Inject(at = @At("TAIL"), method = "<init>(Lnet/minecraft/world/inventory/MenuType;ILnet/minecraft/world/entity/player/Inventory;Lappeng/api/storage/ITerminalHost;Z)V")
     protected void MEStorageMenuConstructor(MenuType<?> menuType, int id, Inventory ip, ITerminalHost host, boolean bindInventory, CallbackInfo ci) {
-        if(menuType.equals(MEStorageMenu.WIRELESS_TYPE) || (Object)(this) instanceof CraftingTermMenu) {
-            registerClientAction(IMPORT_MENU, () -> ae2ImportExportCard$openMenu(UpgradeType.IMPORT));
-            registerClientAction(EXPORT_MENU, () -> ae2ImportExportCard$openMenu(UpgradeType.EXPORT));
+        if (menuType.equals(MEStorageMenu.WIRELESS_TYPE) || (Object) (this) instanceof CraftingTermMenu) {
+            this.registerClientAction(IMPORT_MENU, () -> this.ae2ImportExportCard$openMenu(UpgradeType.IMPORT));
+            this.registerClientAction(EXPORT_MENU, () -> this.ae2ImportExportCard$openMenu(UpgradeType.EXPORT));
         }
     }
 
     @Unique
     @Override
     public void ae2ImportExportCard$openMenu(UpgradeType type) {
-        if (isClientSide()) {
-            sendClientAction(type == UpgradeType.IMPORT ? IMPORT_MENU : EXPORT_MENU);
+        if (this.isClientSide()) {
+            this.sendClientAction(type == UpgradeType.IMPORT ? IMPORT_MENU : EXPORT_MENU);
             return;
         }
-        MenuOpener.open(type == UpgradeType.IMPORT ? UpgradeContainerMenu.TYPE_IMPORT : UpgradeContainerMenu.TYPE_EXPORT, getPlayer(), getLocator());
+        MenuOpener.open(type == UpgradeType.IMPORT ? UpgradeContainerMenu.TYPE_IMPORT : UpgradeContainerMenu.TYPE_EXPORT, this.getPlayer(), this.getLocator());
     }
 }

@@ -3,6 +3,7 @@ package com.ultramega.ae2importexportcard.network;
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.container.CardPlayerSlot;
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
+
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -29,9 +30,9 @@ public record LockSlotUpdateData(int slotId, boolean cancelPickup) implements Cu
     public void handle(final IPayloadContext context) {
         context.enqueueWork(() -> {
             Player player = context.player();
-            if(player.containerMenu instanceof UpgradeContainerMenu) {
-                if(player.containerMenu.slots.get(slotId) instanceof CardPlayerSlot cardSlot) {
-                    cardSlot.setCancelPickup(cancelPickup);
+            if (player.containerMenu instanceof UpgradeContainerMenu) {
+                if (player.containerMenu.slots.get(this.slotId) instanceof CardPlayerSlot cardSlot) {
+                    cardSlot.setCancelPickup(this.cancelPickup);
                 }
             }
         }).exceptionally(e -> null);

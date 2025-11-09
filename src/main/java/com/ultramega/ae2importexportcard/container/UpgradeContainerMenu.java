@@ -1,5 +1,10 @@
 package com.ultramega.ae2importexportcard.container;
 
+import com.ultramega.ae2importexportcard.AE2ImportExportCard;
+import com.ultramega.ae2importexportcard.item.UpgradeHost;
+import com.ultramega.ae2importexportcard.registry.ModSlotSemantics;
+import com.ultramega.ae2importexportcard.util.UpgradeType;
+
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.storage.ISubMenuHost;
@@ -16,10 +21,6 @@ import appeng.menu.slot.FakeSlot;
 import appeng.util.ConfigInventory;
 import appeng.util.ConfigMenuInventory;
 import com.google.common.base.Preconditions;
-import com.ultramega.ae2importexportcard.AE2ImportExportCard;
-import com.ultramega.ae2importexportcard.item.UpgradeHost;
-import com.ultramega.ae2importexportcard.registry.ModSlotSemantics;
-import com.ultramega.ae2importexportcard.util.UpgradeType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
@@ -33,8 +34,7 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     public static final MenuType<UpgradeContainerMenu> TYPE_EXPORT = MenuTypeBuilder.create((id, inventory, host) -> new UpgradeContainerMenu(UpgradeType.EXPORT, id, inventory, host, new UpgradeHost(UpgradeType.EXPORT, id, inventory, host)), WirelessTerminalMenuHost.class)
             .build(ResourceLocation.fromNamespaceAndPath(MODID, AE2ImportExportCard.EXPORT_CARD_ID));
 
-    private final UpgradeType type;
-    private final WirelessTerminalMenuHost host;
+    private final WirelessTerminalMenuHost<?> host;
     private final UpgradeHost upgradeHost;
 
     @GuiSync(0)
@@ -42,28 +42,27 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
 
     public UpgradeContainerMenu(UpgradeType type, int id, Inventory playerInventory, WirelessTerminalMenuHost host, UpgradeHost upgradeHost) {
         super(type == UpgradeType.IMPORT ? TYPE_IMPORT : TYPE_EXPORT, id, playerInventory, host);
-        this.type = type;
         this.host = host;
         this.upgradeHost = upgradeHost;
 
-        setupUpgrades(getUpgradeHost().getUpgrades());
+        this.setupUpgrades(this.getUpgradeHost().getUpgrades());
 
-        addConfigSlots(upgradeHost.filterConfig, type == UpgradeType.IMPORT ? ModSlotSemantics.IMPORT_CONFIG : ModSlotSemantics.EXPORT_CONFIG);
-        createCardPlayerInventorySlots(playerInventory);
+        this.addConfigSlots(upgradeHost.filterConfig, type == UpgradeType.IMPORT ? ModSlotSemantics.IMPORT_CONFIG : ModSlotSemantics.EXPORT_CONFIG);
+        this.createCardPlayerInventorySlots(playerInventory);
     }
 
     private void addConfigSlots(ConfigInventory config, SlotSemantic slotSemantic) {
         ConfigMenuInventory inv = config.createMenuWrapper();
 
         for (int i = 0; i < 18; ++i) {
-            addSlot(new FakeSlot(inv, i), slotSemantic);
+            this.addSlot(new FakeSlot(inv, i), slotSemantic);
         }
     }
 
     private void createCardPlayerInventorySlots(Inventory playerInventory) {
         Preconditions.checkState(this.getSlots(SlotSemantics.PLAYER_INVENTORY).isEmpty(), "Player inventory was already created");
 
-        for(int i = 0; i < playerInventory.items.size(); ++i) {
+        for (int i = 0; i < playerInventory.items.size(); ++i) {
             CardPlayerSlot slot = new CardPlayerSlot(playerInventory, i);
 
             SlotSemantic s = i < Inventory.getSelectionSize() ? SlotSemantics.PLAYER_HOTBAR : SlotSemantics.PLAYER_INVENTORY;
@@ -75,25 +74,25 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     public void broadcastChanges() {
         super.broadcastChanges();
 
-        if (isServerSide()) {
-            if(getUpgradeHost().getUpgrades().isInstalled(AEItems.FUZZY_CARD)) {
-                this.setFuzzyMode(getUpgradeHost().getConfigManager().getSetting(Settings.FUZZY_MODE));
+        if (this.isServerSide()) {
+            if (this.getUpgradeHost().getUpgrades().isInstalled(AEItems.FUZZY_CARD)) {
+                this.setFuzzyMode(this.getUpgradeHost().getConfigManager().getSetting(Settings.FUZZY_MODE));
             }
         }
     }
 
     @Override
     public ISubMenuHost getHost() {
-        return host;
+        return this.host;
     }
 
     public UpgradeHost getUpgradeHost() {
-        return upgradeHost;
+        return this.upgradeHost;
     }
 
     @Override
     public Object getTarget() {
-        return upgradeHost;
+        return this.upgradeHost;
     }
 
     public FuzzyMode getFuzzyMode() {
@@ -105,10 +104,10 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     }
 
     public final IUpgradeInventory getUpgrades() {
-        return getUpgradeHost().getUpgrades();
+        return this.getUpgradeHost().getUpgrades();
     }
 
     public final boolean hasUpgrade(ItemLike upgradeCard) {
-        return getUpgrades().isInstalled(upgradeCard);
+        return this.getUpgrades().isInstalled(upgradeCard);
     }
 }

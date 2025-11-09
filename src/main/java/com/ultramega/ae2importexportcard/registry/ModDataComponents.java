@@ -2,14 +2,15 @@ package com.ultramega.ae2importexportcard.registry;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.util.IntegerArrayCodec;
+
+import java.util.function.Consumer;
+
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.neoforged.neoforge.registries.DeferredRegister;
-
-import java.util.function.Consumer;
 
 public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, AE2ImportExportCard.MODID);

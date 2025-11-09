@@ -61,6 +61,8 @@ public abstract class MixinWirelessTerminalItem extends Item {
     public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
 
+        // TODO: This method can definitely be improved to be more efficient and readable, let's see if I will ever do it
+
         if (level.isClientSide())
             return;
         if (!(entity instanceof ServerPlayer player))
@@ -70,18 +72,21 @@ public abstract class MixinWirelessTerminalItem extends Item {
         IGrid grid = null;
         WirelessTerminalMenuHost<?> host = null;
 
-        if(stack.getItem() instanceof WirelessTerminalItem wirelessTerminalItem) {
-            grid = AE2ImportExportCard.AE2WTLIB_INSTALLED
-                    ? Ae2WtlibUtils.getGridFromStack(wirelessTerminalItem, player, stack)
-                    : wirelessTerminalItem.getLinkedGrid(stack, level, null);
+        if (stack.getItem() instanceof WirelessTerminalItem wirelessTerminalItem) {
+            if (AE2ImportExportCard.AE2WTLIB_INSTALLED) {
+                grid = Ae2WtlibUtils.getGridFromStack(wirelessTerminalItem, player, stack);
+            }
+            if (grid == null) {
+                grid = wirelessTerminalItem.getLinkedGrid(stack, level, null);
+            }
 
-            if(wirelessTerminalItem.getMenuHost(player, MenuLocators.forStack(stack), null) instanceof WirelessTerminalMenuHost<?> menuHost) {
+            if (wirelessTerminalItem.getMenuHost(player, MenuLocators.forStack(stack), null) instanceof WirelessTerminalMenuHost<?> menuHost) {
                 host = menuHost;
             }
         }
 
         // Check if out of range
-        if(grid == null) return;
+        if (grid == null) return;
 
         ItemContainerContents upgrades = stack.getOrDefault(AEComponents.UPGRADES, ItemContainerContents.EMPTY);
         for (int i = 0; i < upgrades.getSlots(); i++) {
@@ -89,7 +94,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
             boolean isImportUpgrade = upgrade.getItem() == ModItems.IMPORT_CARD.get();
             boolean isExportUpgrade = upgrade.getItem() == ModItems.EXPORT_CARD.get();
 
-            if(isImportUpgrade || isExportUpgrade) {
+            if (isImportUpgrade || isExportUpgrade) {
                 IConfigManager configManager = IConfigManager.builder(upgrade)
                         .registerSetting(Settings.FUZZY_MODE, FuzzyMode.IGNORE_ALL)
                         .build();
@@ -100,49 +105,50 @@ public abstract class MixinWirelessTerminalItem extends Item {
 
                 FuzzyMode fuzzyMode = configManager.getSetting(Settings.FUZZY_MODE);
 
-                for(int j = 0; j < selectedInventorySlots.length; j++) {
-                    if(selectedInventorySlots[j] >= 1) {
+                for (int j = 0; j < selectedInventorySlots.length; j++) {
+                    if (selectedInventorySlots[j] >= 1) {
                         ItemStack itemInInventory = player.getInventory().getItem(j);
 
-                        if((isExportUpgrade || itemInInventory.getItem() != Items.AIR) && itemInInventory != stack) {
+                        if ((isExportUpgrade || itemInInventory.getItem() != Items.AIR) && itemInInventory != stack) {
                             // Get filters
                             ConfigInventory filterConfig = ConfigInventory.configTypes(18).changeListener(null).build();
                             filterConfig.readFromChildTag(upgrade.getOrDefault(ModDataComponents.FILTER_CONFIG, new CompoundTag()), "", player.registryAccess());
 
+                            if (host == null) return;
+
                             var node = host.getActionableNode();
-                            if(node == null) return;
+                            if (node == null) return;
 
                             IActionSource source = new PlayerSource(player);
 
                             if (isImportUpgrade) {
                                 AEKey what = AEItemKey.of(itemInInventory);
-                                if(what != null && grid.getStorageService() != null) {
-                                    // TODO: This (whole class) can definitely be improved to be more efficient and readable, let's see if I will ever do it
-
+                                if (what != null && grid.getStorageService() != null) {
                                     // Import Fluids
-                                    for(int index = 0; index < filterConfig.size(); index++) {
+                                    for (int index = 0; index < filterConfig.size(); index++) {
                                         GenericStack filter = filterConfig.getStack(index);
-                                        if(filter != null && filter.what() instanceof AEFluidKey) {
+                                        if (filter != null && filter.what() instanceof AEFluidKey) {
                                             var cap = itemInInventory.getCapability(Capabilities.FluidHandler.ITEM);
-                                            if(cap != null) {
+                                            if (cap != null) {
                                                 FluidStack fluidStack = cap.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
-                                                if(fluidStack.isEmpty()) continue;
+                                                if (fluidStack.isEmpty()) continue;
 
                                                 AEFluidKey aeFluidKey = AEFluidKey.of(fluidStack);
-                                                if(aeFluidKey == null) continue;
+                                                if (aeFluidKey == null) continue;
 
                                                 long amount = StorageHelper.poweredInsert(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), aeFluidKey, fluidStack.getAmount(), source, Actionable.SIMULATE);
                                                 if (amount <= 0) continue;
 
-                                                cap.drain((int)amount, IFluidHandler.FluidAction.EXECUTE);
+                                                cap.drain((int) amount, IFluidHandler.FluidAction.EXECUTE);
                                                 StorageHelper.poweredInsert(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), aeFluidKey, amount, source, Actionable.MODULATE);
+                                                player.getInventory().setItem(j, cap.getContainer());
                                                 player.containerMenu.broadcastChanges();
                                             }
                                         }
                                     }
 
                                     // Import Items
-                                    if(invertFilter != filterConfig.getAvailableStacks().findFuzzy(what, fuzzyMode).stream().anyMatch(filterKeyEntry -> upgradeInventory.isInstalled(AEItems.FUZZY_CARD) ? what.fuzzyEquals(filterKeyEntry.getKey(), fuzzyMode) : what.equals(filterKeyEntry.getKey()))) {
+                                    if (invertFilter != filterConfig.getAvailableStacks().findFuzzy(what, fuzzyMode).stream().anyMatch(filterKeyEntry -> upgradeInventory.isInstalled(AEItems.FUZZY_CARD) ? what.fuzzyEquals(filterKeyEntry.getKey(), fuzzyMode) : what.equals(filterKeyEntry.getKey()))) {
                                         long amount = StorageHelper.poweredInsert(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), what, itemInInventory.getCount(), source, Actionable.SIMULATE);
                                         if (amount <= 0) continue;
 
@@ -152,7 +158,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                     }
                                 }
                             } else {
-                                for(int index = 0; index < filterConfig.size(); index++) {
+                                for (int index = 0; index < filterConfig.size(); index++) {
                                     GenericStack filter = filterConfig.getStack(index);
                                     if (filter == null) continue;
                                     if (index != selectedInventorySlots[j] - 1) continue;
@@ -163,42 +169,42 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                         boolean acceptsFluid = false;
 
                                         var cap = itemInInventory.getCapability(Capabilities.FluidHandler.ITEM);
-                                        if(cap != null) {
+                                        if (cap != null) {
                                             acceptsFluid = true;
                                         }
 
-                                        if(acceptsFluid || itemInInventory.isEmpty() || (upgradeInventory.isInstalled(AEItems.FUZZY_CARD) ? what.fuzzyEquals(filter.what(), fuzzyMode) : what.equals(filter.what()))) {
+                                        if (acceptsFluid || itemInInventory.isEmpty() || (upgradeInventory.isInstalled(AEItems.FUZZY_CARD) ? what.fuzzyEquals(filter.what(), fuzzyMode) : what.equals(filter.what()))) {
                                             AEKey toExportKey = null;
-                                            if(upgradeInventory.isInstalled(AEItems.FUZZY_CARD)) {
+                                            if (upgradeInventory.isInstalled(AEItems.FUZZY_CARD)) {
                                                 var fuzzy = grid.getStorageService().getCachedInventory()
                                                         .findFuzzy(filter.what(), fuzzyMode)
                                                         .stream().findFirst();
-                                                if(fuzzy.isPresent()) {
+                                                if (fuzzy.isPresent()) {
                                                     toExportKey = fuzzy.get().getKey();
                                                 }
                                             } else {
                                                 toExportKey = filter.what();
                                             }
-                                            if(toExportKey != null) {
-                                                if(!acceptsFluid && toExportKey instanceof AEItemKey fuzzyItem) {
+                                            if (toExportKey != null) {
+                                                if (toExportKey instanceof AEItemKey fuzzyItem) {
                                                     int extractAmount = Math.min(itemInInventory.getMaxStackSize() - itemInInventory.getCount(), itemInInventory.getMaxStackSize());
                                                     int stackInteractionSize = upgradeInventory.isInstalled(AEItems.SPEED_CARD) ? 64 : 1;
                                                     int size = Math.min(stackInteractionSize, extractAmount);
 
-                                                    if(size <= 0) continue;
+                                                    if (size <= 0) continue;
 
-                                                    long extracted = StorageHelper.poweredExtraction(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), toExportKey, size, source, Actionable.MODULATE);
-                                                    if(extracted <= 0) {
-                                                        if(upgradeInventory.isInstalled(AEItems.CRAFTING_CARD)) {
+                                                    long extracted = StorageHelper.poweredExtraction(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), toExportKey, size, source, Actionable.SIMULATE);
+                                                    if (extracted <= 0) {
+                                                        if (upgradeInventory.isInstalled(AEItems.CRAFTING_CARD)) {
                                                             var craftingService = grid.getCraftingService();
-                                                            if(craftingService.isCraftable(filter.what()) && craftingService.getRequestedAmount(filter.what()) <= 0) {
+                                                            if (craftingService.isCraftable(filter.what()) && craftingService.getRequestedAmount(filter.what()) <= 0) {
                                                                 var src = new MachineSource(grid::getPivot);
 
-                                                                if(ae2importExportCard$craftingJob != null) {
+                                                                if (this.ae2importExportCard$craftingJob != null) {
                                                                     try {
                                                                         ICraftingPlan job = null;
-                                                                        if (ae2importExportCard$craftingJob.isDone()) {
-                                                                            job = ae2importExportCard$craftingJob.get();
+                                                                        if (this.ae2importExportCard$craftingJob.isDone()) {
+                                                                            job = this.ae2importExportCard$craftingJob.get();
                                                                         }
 
                                                                         // Check if job is complete
@@ -218,23 +224,29 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                         continue;
                                                     }
 
-                                                    playerInventory.insertItem(j, fuzzyItem.toStack((int) extracted), false);
-                                                    player.containerMenu.broadcastChanges();
-                                                } else if(acceptsFluid && toExportKey instanceof AEFluidKey fuzzyFluid) {
+                                                    final ItemStack toInsert = fuzzyItem.toStack((int) extracted);
+                                                    final ItemStack inserted = playerInventory.insertItem(j, toInsert, true);
+                                                    if (inserted.isEmpty()) { // toInsert was accepted
+                                                        StorageHelper.poweredExtraction(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), toExportKey, size, source, Actionable.MODULATE);
+                                                        playerInventory.insertItem(j, toInsert, false);
+                                                        player.containerMenu.broadcastChanges();
+                                                    }
+                                                } else if (acceptsFluid && toExportKey instanceof AEFluidKey fuzzyFluid) {
                                                     int stackInteractionSize = upgradeInventory.isInstalled(AEItems.SPEED_CARD) ? AEFluidKey.AMOUNT_BUCKET * 64 : AEFluidKey.AMOUNT_BUCKET;
 
                                                     long extracted = StorageHelper.poweredExtraction(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), toExportKey, stackInteractionSize, source, Actionable.SIMULATE);
-                                                    if(extracted <= 0) {
+                                                    if (extracted <= 0) {
                                                         continue;
                                                     }
 
                                                     int amount = cap.fill(fuzzyFluid.toStack((int) extracted), IFluidHandler.FluidAction.SIMULATE);
-                                                    if(amount <= 0) {
+                                                    if (amount <= 0) {
                                                         continue;
                                                     }
 
                                                     StorageHelper.poweredExtraction(new ActionHostEnergySource(host), grid.getStorageService().getInventory(), toExportKey, amount, source, Actionable.MODULATE);
                                                     cap.fill(fuzzyFluid.toStack(amount), IFluidHandler.FluidAction.EXECUTE);
+                                                    player.getInventory().setItem(j, cap.getContainer());
                                                     player.containerMenu.broadcastChanges();
                                                 }
                                             }

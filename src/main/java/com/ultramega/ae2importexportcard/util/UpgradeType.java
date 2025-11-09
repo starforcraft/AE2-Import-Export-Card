@@ -1,22 +1,16 @@
 package com.ultramega.ae2importexportcard.util;
 
 public enum UpgradeType {
-    IMPORT(0, "import"),
-    EXPORT(1, "export");
+    IMPORT(0),
+    EXPORT(1);
 
     private final int id;
-    private final String name;
 
-    UpgradeType(int id, String name) {
+    UpgradeType(int id) {
         this.id = id;
-        this.name = name;
     }
 
     public int getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
+        return this.id;
     }
 }
