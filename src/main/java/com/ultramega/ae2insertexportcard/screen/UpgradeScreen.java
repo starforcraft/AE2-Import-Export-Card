@@ -20,7 +20,7 @@ import com.ultramega.ae2insertexportcard.network.LockSlotUpdateMessage;
 import com.ultramega.ae2insertexportcard.network.UpgradeUpdateMessage;
 import com.ultramega.ae2insertexportcard.util.UpgradeType;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -28,14 +28,19 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
-    private static final ResourceLocation CHECKMARK = new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/gui/checkmark.png");
-    private static final ResourceLocation XMARK = new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/gui/xmark.png");
-    private static final ResourceLocation MASS_SELECT = new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/gui/mass_select.png");
+    private static final ResourceLocation CHECKMARK = new ResourceLocation(AE2InsertExportCard.MOD_ID,
+            "textures/gui/checkmark.png");
+    private static final ResourceLocation XMARK = new ResourceLocation(AE2InsertExportCard.MOD_ID,
+            "textures/gui/xmark.png");
+    private static final ResourceLocation MASS_SELECT = new ResourceLocation(AE2InsertExportCard.MOD_ID,
+            "textures/gui/mass_select.png");
 
     private final UpgradeType type;
 
@@ -46,11 +51,13 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private boolean dragging = false;
     private int clickedSlotId = -1;
 
-    public UpgradeScreen(UpgradeType type, UpgradeContainerMenu containerMenu, Inventory playerInventory, Component title, ScreenStyle style) {
+    public UpgradeScreen(UpgradeType type, UpgradeContainerMenu containerMenu, Inventory playerInventory,
+            Component title, ScreenStyle style) {
         super(containerMenu, playerInventory, title, style);
         this.type = type;
         this.selectedInventorySlots = containerMenu.getUpgradeHost().getSelectedInventorySlots();
-        this.widgets.add("upgrades", new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE), this::getCompatibleUpgrades));
+        this.widgets.add("upgrades",
+                new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE), this::getCompatibleUpgrades));
 
         AESubScreen.addBackButton(menu, "back", widgets);
 
@@ -67,8 +74,8 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     }
 
     @Override
-    public void drawBG(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-        super.drawBG(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
+    public void drawBG(PoseStack poseStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        super.drawBG(poseStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
 
         for (int i = 0; i < this.menu.slots.size(); i++) {
             Slot slot = this.menu.slots.get(i);
@@ -77,30 +84,31 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
             if (slot instanceof FakeSlot) {
                 if (type != UpgradeType.INSERT) {
-                    renderSlotHighlight(graphics, type, font, slot.x + leftPos, slot.y + topPos, true, i - 3 + 1);
+                    renderSlotHighlight(poseStack, type, font, slot.x + leftPos, slot.y + topPos, true, i - 3 + 1);
                 }
-            } else  if(i >= 18 && selectedInventorySlots.length > index) {
+            } else if (i >= 18 && selectedInventorySlots.length > index) {
                 if (selectedInventorySlots[index] >= 1) {
-                    renderSlotHighlight(graphics, type, font, slot.x + leftPos, slot.y + topPos, true, selectedInventorySlots[index]);
+                    renderSlotHighlight(poseStack, type, font, slot.x + leftPos, slot.y + topPos, true,
+                            selectedInventorySlots[index]);
                 } else if (selectedInventorySlots[index] == 0) {
-                    renderSlotHighlight(graphics, type, font, slot.x + leftPos, slot.y + topPos, false, -1);
+                    renderSlotHighlight(poseStack, type, font, slot.x + leftPos, slot.y + topPos, false, -1);
                 }
             }
         }
 
-        renderMassSelect(graphics, leftPos + 8 + (16 * 10), topPos + 76);
+        renderMassSelect(poseStack, leftPos + 8 + (16 * 10), topPos + 76);
     }
 
     @Override
     public boolean mouseClicked(double xCoord, double yCoord, int btn) {
         ItemStack itemstack = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
-        if(itemstack.isEmpty()) {
+        if (itemstack.isEmpty()) {
             Slot slot = findSlot(xCoord, yCoord);
             if (slot instanceof CardPlayerSlot) {
-                if(hasShiftDown() && !slot.getItem().isEmpty()) {
+                if (hasShiftDown() && !slot.getItem().isEmpty()) {
                     cancel = true;
                 }
-                if(!cancel) {
+                if (!cancel) {
                     clickedSlotId = slot.index;
                     AE2InsertExportCard.NETWORK_HANDLER.sendToServer(new LockSlotUpdateMessage(clickedSlotId, true));
                 }
@@ -113,14 +121,14 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         Slot slot = findSlot(mouseX, mouseY);
-        if(!cancel && slot instanceof CardPlayerSlot) {
+        if (!cancel && slot instanceof CardPlayerSlot) {
             ItemStack itemstack = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
-            if((!dragging || (slot.getItem().isEmpty() && slot.index == clickedSlotId)) && itemstack.isEmpty()) {
+            if ((!dragging || (slot.getItem().isEmpty() && slot.index == clickedSlotId)) && itemstack.isEmpty()) {
                 int slotId = slot.index - (18 + (type == UpgradeType.EXPORT ? 3 : 2));
 
-                if(button == 0) {
+                if (button == 0) {
                     increaseSelectedInventorySlot(type, slotId);
-                } else if(button == 1) {
+                } else if (button == 1) {
                     selectedInventorySlots[slotId] = 0;
                 }
                 sendUpdate();
@@ -153,7 +161,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     }
 
     private void increaseSelectedInventorySlot(UpgradeType type, int index) {
-        if(type == UpgradeType.EXPORT) {
+        if (type == UpgradeType.EXPORT) {
             if (selectedInventorySlots[index] >= 18) {
                 selectedInventorySlots[index] = 0;
             } else {
@@ -168,42 +176,48 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         dragging = true;
         ItemStack itemstack = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
-        if(clickedSlotId != -1 && itemstack.isEmpty()) {
+        if (clickedSlotId != -1 && itemstack.isEmpty()) {
             slotClicked(this.menu.slots.get(clickedSlotId), clickedSlotId, button, ClickType.PICKUP);
         }
 
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
-    public static void renderSlotHighlight(GuiGraphics graphics, UpgradeType type, Font font, int x, int y, boolean checked, int filterIndex) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 300.0F);
+    public static void renderSlotHighlight(PoseStack poseStack, UpgradeType type, Font font, int x, int y,
+            boolean checked, int filterIndex) {
+        poseStack.pushPose();
+        poseStack.translate(0, 0, 300.0F);
 
         if (checked) {
             if (type == UpgradeType.INSERT) {
-                graphics.blit(CHECKMARK, x, y, 0, 0, 16, 16, 16, 16);
+                RenderSystem.setShaderTexture(0, CHECKMARK);
+                blit(poseStack, x, y, 0, 0, 16, 16, 16, 16);
             } else {
-                graphics.drawString(font, String.valueOf(filterIndex), x + 16 - font.width(String.valueOf(filterIndex)), y, Color.GREEN.hashCode());
+                font.draw(poseStack, String.valueOf(filterIndex), x + 16 - font.width(String.valueOf(filterIndex)), y,
+                        Color.GREEN.hashCode());
             }
         } else {
-            graphics.blit(XMARK, x, y, 0, 0, 16, 16, 16, 16);
+            RenderSystem.setShaderTexture(0, XMARK);
+            blit(poseStack, x, y, 0, 0, 16, 16, 16, 16);
         }
 
-        graphics.pose().popPose();
+        poseStack.popPose();
     }
 
-    public static void renderMassSelect(GuiGraphics graphics, int x, int y) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 300.0F);
+    public static void renderMassSelect(PoseStack poseStack, int x, int y) {
+        poseStack.pushPose();
+        poseStack.translate(0, 0, 300.0F);
 
-        graphics.blit(MASS_SELECT, x, y, 0, 0, 16, 16, 16, 16);
-        graphics.blit(MASS_SELECT, x, y + (16 * 3) + 10, 0, 0, 16, 16, 16, 16);
+        RenderSystem.setShaderTexture(0, MASS_SELECT);
+        blit(poseStack, x, y, 0, 0, 16, 16, 16, 16);
+        blit(poseStack, x, y + (16 * 3) + 10, 0, 0, 16, 16, 16, 16);
 
-        graphics.pose().popPose();
+        poseStack.popPose();
     }
 
     public void sendUpdate() {
-        AE2InsertExportCard.NETWORK_HANDLER.sendToServer(new UpgradeUpdateMessage(type.getId(), selectedInventorySlots));
+        AE2InsertExportCard.NETWORK_HANDLER
+                .sendToServer(new UpgradeUpdateMessage(type.getId(), selectedInventorySlots));
     }
 
     private List<Component> getCompatibleUpgrades() {

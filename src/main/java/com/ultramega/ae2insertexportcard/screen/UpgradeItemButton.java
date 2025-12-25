@@ -2,7 +2,7 @@ package com.ultramega.ae2insertexportcard.screen;
 
 import appeng.client.gui.widgets.ITooltip;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
@@ -17,7 +17,7 @@ public class UpgradeItemButton extends Button implements ITooltip {
     public static final ResourceLocation TEXTURE_STATES = new ResourceLocation("ae2", "textures/guis/states.png");
 
     public UpgradeItemButton(OnPress onPress, ResourceLocation texture) {
-        super(0, 0, 16, 16, Component.empty(), onPress, Button.DEFAULT_NARRATION);
+        super(0, 0, 16, 16, Component.empty(), onPress, Button.NO_TOOLTIP);
         this.texture = texture;
     }
 
@@ -27,24 +27,26 @@ public class UpgradeItemButton extends Button implements ITooltip {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, final int mouseX, final int mouseY, float partial) {
+    public void renderButton(PoseStack poseStack, final int mouseX, final int mouseY, float partial) {
         if (!visible)
             return;
-        graphics.pose().pushPose();
+        poseStack.pushPose();
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         if (isFocused()) {
-            graphics.fill(getX() - 1, getY() - 1, getX() + 17, getY() + 17, 0xFFFFFFFF);
+            fill(poseStack, x - 1, y - 1, x + 17, y + 17, 0xFFFFFFFF);
         }
-        graphics.blit(TEXTURE_STATES, getX(), getY(), 16, 16, 240, 240, 16, 16, 256, 256);
+        RenderSystem.setShaderTexture(0, TEXTURE_STATES);
+        blit(poseStack, x, y, 16, 16, 240, 240, 16, 16, 256, 256);
         if (active)
             RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         else
             RenderSystem.setShaderColor(0.5f, 0.5f, 0.5f, 1.0f);
-        graphics.blit(texture, getX(), getY(), 16, 16, 0, 0, 512, 512, 512, 512);
+        RenderSystem.setShaderTexture(0, texture);
+        blit(poseStack, x, y, 16, 16, 0, 0, 512, 512, 512, 512);
         RenderSystem.enableDepthTest();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        graphics.pose().popPose();
+        poseStack.popPose();
     }
 
     @Override
@@ -54,7 +56,7 @@ public class UpgradeItemButton extends Button implements ITooltip {
 
     @Override
     public Rect2i getTooltipArea() {
-        return new Rect2i(getX(), getY(), 16, 16);
+        return new Rect2i(x, y, 16, 16);
     }
 
     @Override

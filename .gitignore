@@ -12,6 +12,7 @@ out
 *.iws
 *.iml
 .idea
+.vscode
 
 # gradle
 build
@@ -21,6 +22,7 @@ build
 eclipse
 run
 logs
+error*
 
 # Files from Forge MDK
 forge*changelog.txt

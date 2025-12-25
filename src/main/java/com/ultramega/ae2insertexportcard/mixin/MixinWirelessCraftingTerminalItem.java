@@ -3,6 +3,7 @@ package com.ultramega.ae2insertexportcard.mixin;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.ICraftingPlan;
 import appeng.helpers.WirelessTerminalMenuHost;
+import appeng.items.tools.powered.WirelessCraftingTerminalItem;
 import appeng.items.tools.powered.WirelessTerminalItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -14,10 +15,10 @@ import org.spongepowered.asm.mixin.Unique;
 
 import java.util.concurrent.Future;
 
-@Mixin(WirelessTerminalItem.class)
-public abstract class MixinWirelessTerminalItem extends Item {
+@Mixin(WirelessCraftingTerminalItem.class)
+public abstract class MixinWirelessCraftingTerminalItem extends Item {
 
-    public MixinWirelessTerminalItem(Properties properties) {
+    public MixinWirelessCraftingTerminalItem(Properties properties) {
         super(properties);
     }
 
@@ -33,11 +34,6 @@ public abstract class MixinWirelessTerminalItem extends Item {
 
         if (!stack.hasTag())
             return;
-
-        if (!stack.hasTag()) return;
-        // 
-        
-        // Check if in access point range
 
         // Check if in access point range
         boolean inRange = false;
