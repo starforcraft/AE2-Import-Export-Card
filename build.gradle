@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '6.+', changing: true
         classpath 'org.parchmentmc:librarian:1.+'
         classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
     }
@@ -25,7 +25,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
-    mappings channel: 'parchment', version: "2023.07.16-1.20.1"
+    mappings channel: 'parchment', version: "2022.08.10-1.19.2"
 
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
@@ -114,16 +114,11 @@ dependencies {
     runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}")
 
     implementation fg.deobf("appeng:appliedenergistics2-forge:${ae2_version}")
-
-    implementation fg.deobf('curse.maven:ae2wirelessterminals-459929:5217955')
-    runtimeOnly fg.deobf('curse.maven:aeinfinitybooster-559313:4869749')
-    runtimeOnly fg.deobf('curse.maven:largefluidtank-291006:4810355')
-    runtimeOnly fg.deobf('curse.maven:scalablecatsforce-320926:4810184')
-    runtimeOnly fg.deobf('curse.maven:powah-633483:4638301')
-    runtimeOnly fg.deobf('curse.maven:curios-309927:4583413')
-    runtimeOnly fg.deobf('curse.maven:cloth-348521:4633444')
-    runtimeOnly fg.deobf('curse.maven:architectury-419699:4663010')
-    runtimeOnly fg.deobf('curse.maven:libx-412525:4606863')
+    implementation fg.deobf('curse.maven:ae2wirelessterminals-459929:4655495')
+    
+    runtimeOnly fg.deobf('curse.maven:curios-309927:5843737')
+    runtimeOnly fg.deobf('curse.maven:cloth-348521:5729096')
+    runtimeOnly fg.deobf('curse.maven:architectury-419699:4384406')
 }
 
 jar {

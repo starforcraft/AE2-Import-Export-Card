@@ -8,8 +8,11 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class ModItems {
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, AE2InsertExportCard.MOD_ID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS,
+            AE2InsertExportCard.MOD_ID);
 
-    public static final RegistryObject<Item> INSERT_CARD = ITEMS.register("insert_card", () -> Upgrades.createUpgradeCardItem(new Item.Properties().stacksTo(1)));
-    public static final RegistryObject<Item> EXPORT_CARD = ITEMS.register("export_card", () -> Upgrades.createUpgradeCardItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> INSERT_CARD = ITEMS.register("insert_card", () -> Upgrades
+            .createUpgradeCardItem(new Item.Properties().tab(ModCreativeTabs.TAB_AE2INSERTEXPORTCARD).stacksTo(1)));
+    public static final RegistryObject<Item> EXPORT_CARD = ITEMS.register("export_card", () -> Upgrades
+            .createUpgradeCardItem(new Item.Properties().tab(ModCreativeTabs.TAB_AE2INSERTEXPORTCARD).stacksTo(1)));
 }

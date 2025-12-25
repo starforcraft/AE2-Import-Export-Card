@@ -6,26 +6,24 @@ import appeng.helpers.WirelessTerminalMenuHost;
 import appeng.items.tools.powered.WirelessTerminalItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.Future;
 
-@Mixin(WirelessTerminalItem.class)
-public abstract class MixinWirelessTerminalItem extends Item {
-
-    public MixinWirelessTerminalItem(Properties properties) {
-        super(properties);
-    }
-
+@Mixin(targets = "de.mari_023.ae2wtlib.wut.ItemWUT")
+public class MixinWUTItem {
     @Unique
     private Future<ICraftingPlan> ae2insertExportCard$craftingJob;
 
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+    @Inject(method = "inventoryTick", at = @At("HEAD"), remap = false)
+    public void ae2insertExportCard_inventoryTick(ItemStack stack, Level level, Entity entity, int slotId,
+            boolean isSelected, CallbackInfo ci) {
         if (level.isClientSide())
             return;
         if (!(entity instanceof ServerPlayer player))
@@ -33,11 +31,6 @@ public abstract class MixinWirelessTerminalItem extends Item {
 
         if (!stack.hasTag())
             return;
-
-        if (!stack.hasTag()) return;
-        // 
-        
-        // Check if in access point range
 
         // Check if in access point range
         boolean inRange = false;

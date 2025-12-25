@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[43,)"
 license="MIT"
 issueTrackerURL="https://github.com/starforcraft/AE2-Insert-Export-Card/issues/new/choose"
 [[mods]]
@@ -15,20 +15,20 @@ description="This mod adds a Insert and Export Card."
 [[dependencies.ae2insertexportcard]]
     modId="ae2"
     mandatory=true
-    versionRange="[15,)"
+    versionRange="[12,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.ae2insertexportcard]]
     modId="forge"
     mandatory=true
-    versionRange="[47,)"
+    versionRange="[43,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.ae2insertexportcard]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20.1,)"
+    versionRange="[1.19.2,1.20)"
     ordering="NONE"
     side="BOTH"
