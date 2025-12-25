@@ -43,13 +43,6 @@ public class AE2InsertExportCard {
         Upgrades.add(AEItems.SPEED_CARD, ModItems.EXPORT_CARD.get(), 1);
 
         AE2InsertExportCard.NETWORK_HANDLER.register();
-
-        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(this::onPlayerTick);
-    }
-
-    public void onPlayerTick(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
-        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || event.player.level.isClientSide)
-            return;
     }
 
     public static void tickWireless(net.minecraft.world.item.ItemStack stack, appeng.api.networking.IGrid grid,
