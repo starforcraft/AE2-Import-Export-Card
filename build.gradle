@@ -89,7 +89,7 @@ configurations {
 dependencies {
     implementation "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
-    implementation "de.mari_023:ae2wtlib_api:${ae2wtlib_version}"
+    compileOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
     runtimeOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
 
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"

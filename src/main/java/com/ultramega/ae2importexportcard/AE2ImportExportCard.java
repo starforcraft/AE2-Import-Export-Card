@@ -12,6 +12,7 @@ import com.ultramega.ae2importexportcard.util.UpgradeType;
 import appeng.api.upgrades.Upgrades;
 import appeng.core.definitions.AEItems;
 import appeng.init.client.InitScreens;
+import de.mari_023.ae2wtlib.AE2wtlibItems;
 import de.mari_023.ae2wtlib.api.AE2wtlibAPI;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
@@ -69,6 +70,8 @@ public class AE2ImportExportCard {
 
             Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
             Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
+            Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
+            Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
         }
 
         Upgrades.add(AEItems.FUZZY_CARD, ModItems.IMPORT_CARD.get(), 1);
