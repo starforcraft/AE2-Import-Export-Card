@@ -6,11 +6,14 @@ import com.ultramega.ae2insertexportcard.network.NetworkHandler;
 import com.ultramega.ae2insertexportcard.registry.ClientEventHandler;
 import com.ultramega.ae2insertexportcard.registry.ModItems;
 import com.ultramega.ae2insertexportcard.registry.RegistryHandler;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.items.CapabilityItemHandler;
 
 @Mod(AE2InsertExportCard.MOD_ID)
 public class AE2InsertExportCard {
@@ -55,10 +58,10 @@ public class AE2InsertExportCard {
 
             for (int i = 0; i < tagList.size(); i++) {
                 boolean isInsertUpgrade = tagList.getCompound(i).getString("id")
-                        .equals(new net.minecraft.resources.ResourceLocation(AE2InsertExportCard.MOD_ID, "insert_card")
+                        .equals(new ResourceLocation(AE2InsertExportCard.MOD_ID, "insert_card")
                                 .toString());
                 boolean isExportUpgrade = tagList.getCompound(i).getString("id")
-                        .equals(new net.minecraft.resources.ResourceLocation(AE2InsertExportCard.MOD_ID, "export_card")
+                        .equals(new ResourceLocation(AE2InsertExportCard.MOD_ID, "export_card")
                                 .toString());
 
                 if (isInsertUpgrade || isExportUpgrade) {
@@ -111,7 +114,7 @@ public class AE2InsertExportCard {
                                             if (filter != null
                                                     && filter.what() instanceof appeng.api.stacks.AEFluidKey) {
                                                 itemInInventory.getCapability(
-                                                        net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM)
+                                                        CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)
                                                         .ifPresent((fluidItem -> {
                                                             net.minecraftforge.fluids.FluidStack fluidStack = fluidItem
                                                                     .drain(Integer.MAX_VALUE,
@@ -186,7 +189,7 @@ public class AE2InsertExportCard {
 
                                         java.util.Optional<net.minecraftforge.items.IItemHandler> playerInventory = player
                                                 .getCapability(
-                                                        net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER,
+                                                        CapabilityItemHandler.ITEM_HANDLER_CAPABILITY,
                                                         net.minecraft.core.Direction.UP)
                                                 .resolve();
                                         if (playerInventory.isPresent()) {
@@ -196,7 +199,7 @@ public class AE2InsertExportCard {
 
                                             var cap = itemInInventory
                                                     .getCapability(
-                                                            net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM)
+                                                            CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY)
                                                     .cast();
                                             if (cap.isPresent()) {
                                                 acceptsFluid = true;
