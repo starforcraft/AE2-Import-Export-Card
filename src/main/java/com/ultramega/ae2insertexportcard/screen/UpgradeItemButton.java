@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,7 +18,7 @@ public class UpgradeItemButton extends Button implements ITooltip {
     public static final ResourceLocation TEXTURE_STATES = new ResourceLocation("ae2", "textures/guis/states.png");
 
     public UpgradeItemButton(OnPress onPress, ResourceLocation texture) {
-        super(0, 0, 16, 16, Component.empty(), onPress, Button.NO_TOOLTIP);
+        super(0, 0, 16, 16, new TextComponent(""), onPress, Button.NO_TOOLTIP);
         this.texture = texture;
     }
 

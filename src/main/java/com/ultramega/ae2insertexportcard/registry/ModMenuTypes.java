@@ -1,6 +1,5 @@
 package com.ultramega.ae2insertexportcard.registry;
 
-import appeng.core.AppEng;
 import com.ultramega.ae2insertexportcard.container.UpgradeContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -12,6 +11,6 @@ public class ModMenuTypes {
     }
 
     public static void registerMenuType(String id, MenuType<?> menuType) {
-        ForgeRegistries.MENU_TYPES.register(AppEng.makeId(id), menuType);
+        ForgeRegistries.CONTAINERS.register(menuType);
     }
 }

@@ -12,6 +12,7 @@ import com.ultramega.ae2insertexportcard.screen.UpgradeItemButton;
 import com.ultramega.ae2insertexportcard.util.UpgradeInterface;
 import com.ultramega.ae2insertexportcard.util.UpgradeType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import org.spongepowered.asm.mixin.Final;
@@ -37,12 +38,12 @@ public abstract class MixinMEStorageScreen extends AEBaseScreen {
             ae2insertExportCard$upgradeCardButton[0] = new UpgradeItemButton(btn -> ((UpgradeInterface) ((MEStorageScreen<?>) (Object) this).getMenu()).ae2InsertExportCard$openMenu(UpgradeType.INSERT),
                     new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/item/insert_card.png"));
             addToLeftToolbar(ae2insertExportCard$upgradeCardButton[0]);
-            ae2insertExportCard$upgradeCardButton[0].setMessage(Component.translatable(ModItems.INSERT_CARD.get().getDescriptionId()));
+            ae2insertExportCard$upgradeCardButton[0].setMessage(new TranslatableComponent(ModItems.INSERT_CARD.get().getDescriptionId()));
 
             ae2insertExportCard$upgradeCardButton[1] = new UpgradeItemButton(btn -> ((UpgradeInterface) ((MEStorageScreen<?>) (Object) this).getMenu()).ae2InsertExportCard$openMenu(UpgradeType.EXPORT),
                     new ResourceLocation(AE2InsertExportCard.MOD_ID, "textures/item/export_card.png"));
             addToLeftToolbar(ae2insertExportCard$upgradeCardButton[1]);
-            ae2insertExportCard$upgradeCardButton[1].setMessage(Component.translatable(ModItems.EXPORT_CARD.get().getDescriptionId()));
+            ae2insertExportCard$upgradeCardButton[1].setMessage(new TranslatableComponent(ModItems.EXPORT_CARD.get().getDescriptionId()));
         }
     }
 
