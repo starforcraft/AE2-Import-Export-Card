@@ -24,13 +24,14 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @Mod(AE2ImportExportCard.MODID)
-public class AE2ImportExportCard {
+public final class AE2ImportExportCard {
     public static final String MODID = "ae2importexportcard";
 
     public static final String IMPORT_CARD_ID = "import_card";
     public static final String EXPORT_CARD_ID = "export_card";
 
     public static boolean AE2WTLIB_INSTALLED = false;
+    public static boolean MEKANISM_INSTALLED = false;
 
     public AE2ImportExportCard(IEventBus modEventBus) {
         registerMenus();
@@ -72,6 +73,9 @@ public class AE2ImportExportCard {
             Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
             Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
             Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
+        }
+        if (ModList.get().isLoaded("mekanism")) {
+            MEKANISM_INSTALLED = true;
         }
 
         Upgrades.add(AEItems.FUZZY_CARD, ModItems.IMPORT_CARD.get(), 1);

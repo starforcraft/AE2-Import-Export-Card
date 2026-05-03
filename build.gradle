@@ -20,12 +20,19 @@ repositories {
         url "https://modmaven.dev/"
         content {
             includeGroup 'org.appliedenergistics'
-            includeGroup "de.mari_023"
+            includeGroup 'de.mari_023'
+            includeGroup 'mekanism'
         }
     }
     maven {
         name = "TerraformersMC"
         url = "https://maven.terraformersmc.com/"
+    }
+    maven {
+        url = uri("https://cursemaven.com")
+        content {
+            includeGroup("curse.maven")
+        }
     }
 }
 
@@ -92,6 +99,11 @@ dependencies {
     compileOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
     runtimeOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
 
+    compileOnlyApi "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:api"
+    runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:all"
+    compileOnly "curse.maven:appmek-574300:${appmek_version}"
+    runtimeOnly "curse.maven:appmek-574300:${appmek_version}"
+
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
 }
 
@@ -106,12 +118,16 @@ publishMods {
         projectId = "982512"
         minecraftVersions.add(minecraft_version)
         displayName = file.map { it.asFile.name }
+        requires("applied-energistics-2")
+        optional("mekanism", "applied-mekanistics")
     }
 
     modrinth {
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         projectId = "qelfSMnn"
         minecraftVersions.add(minecraft_version)
+        requires("applied-energistics-2")
+        optional("mekanism", "applied-mekanistics")
     }
 }
 

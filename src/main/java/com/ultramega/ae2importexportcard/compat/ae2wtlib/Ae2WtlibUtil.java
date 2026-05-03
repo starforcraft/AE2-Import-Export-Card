@@ -7,7 +7,10 @@ import de.mari_023.ae2wtlib.api.terminal.WTMenuHost;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-public class Ae2WtlibUtils {
+public final class Ae2WtlibUtil {
+    private Ae2WtlibUtil() {
+    }
+
     public static IGrid getGridFromStack(WirelessTerminalItem wirelessTerminalItem, Player player, ItemStack stack) {
         if (wirelessTerminalItem.getMenuHost(player, MenuLocators.forStack(stack), null) instanceof WTMenuHost menuHost) {
             var node = menuHost.getActionableNode();

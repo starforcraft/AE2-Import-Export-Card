@@ -24,6 +24,7 @@ import appeng.core.definitions.AEItems;
 import appeng.core.localization.GuiText;
 import appeng.menu.SlotSemantics;
 import appeng.menu.slot.FakeSlot;
+import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -73,15 +74,15 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     }
 
     @Override
-    public void drawBG(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-        super.drawBG(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
+    public void drawFG(final GuiGraphics graphics, final int offsetX, final int offsetY, final int mouseX, final int mouseY) {
+        super.drawFG(graphics, offsetX, offsetY, mouseX, mouseY);
 
         for (int i = 0; i < this.menu.slots.size(); i++) {
             Slot slot = this.menu.slots.get(i);
 
             if (slot instanceof FakeSlot) {
                 if (this.type != UpgradeType.IMPORT) {
-                    renderSlotHighlight(graphics, this.type, this.font, slot.x + this.leftPos, slot.y + this.topPos, true, i - 3 + 1);
+                    renderSlotHighlight(graphics, this.type, this.font, slot.x, slot.y, true, i - 3 + 1);
                 }
                 continue;
             }
@@ -97,9 +98,9 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
             int selectedSlot = this.selectedInventorySlots[index];
             if (selectedSlot >= 1) {
-                renderSlotHighlight(graphics, this.type, this.font, slot.x + this.leftPos, slot.y + this.topPos, true, selectedSlot);
+                renderSlotHighlight(graphics, this.type, this.font, slot.x, slot.y, true, selectedSlot);
             } else if (selectedSlot == 0) {
-                renderSlotHighlight(graphics, this.type, this.font, slot.x + this.leftPos, slot.y + this.topPos, false, -1);
+                renderSlotHighlight(graphics, this.type, this.font, slot.x, slot.y, false, -1);
             }
         }
 
@@ -107,20 +108,27 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     }
 
     public static void renderSlotHighlight(GuiGraphics graphics, UpgradeType type, Font font, int x, int y, boolean checked, int filterIndex) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 300.0F);
+        PoseStack poseStack = graphics.pose();
+        poseStack.pushPose();
+        poseStack.translate(0, 0, 300.0F);
 
         if (checked) {
             if (type == UpgradeType.IMPORT) {
                 graphics.blit(CHECKMARK, x, y, 0, 0, 16, 16, 16, 16);
             } else {
-                graphics.drawString(font, String.valueOf(filterIndex), x + 16 - font.width(String.valueOf(filterIndex)), y, Color.GREEN.hashCode());
+                poseStack.pushPose();
+                poseStack.scale(0.5F, 0.5F, 1.0F);
+
+                String text = String.valueOf(filterIndex);
+                graphics.drawString(font, text, (x + 16) * 2 - font.width(text), y * 2, Color.GREEN.hashCode());
+
+                poseStack.popPose();
             }
         } else {
             graphics.blit(XMARK, x, y, 0, 0, 16, 16, 16, 16);
         }
 
-        graphics.pose().popPose();
+        poseStack.popPose();
     }
 
     public static void renderMassSelect(GuiGraphics graphics, int x, int y) {

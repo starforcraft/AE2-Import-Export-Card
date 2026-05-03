@@ -1,9 +1,11 @@
 package com.ultramega.ae2importexportcard.mixin;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
-import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtils;
+import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
+import com.ultramega.ae2importexportcard.compat.mekanism.MekanismBridge;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
+import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
 
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -96,7 +98,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
         IGrid grid = null;
 
         if (AE2ImportExportCard.AE2WTLIB_INSTALLED) {
-            grid = Ae2WtlibUtils.getGridFromStack(wirelessTerminalItem, player, terminalStack);
+            grid = Ae2WtlibUtil.getGridFromStack(wirelessTerminalItem, player, terminalStack);
         }
 
         if (grid == null) {
@@ -213,6 +215,9 @@ public abstract class MixinWirelessTerminalItem extends Item {
         this.ae2importExportCard$importFluidFromItem(player, grid, energySource, source, inventorySlot,
             itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
+        MekanismBridge.importChemicalFromItem(player, grid, energySource, source, inventorySlot,
+            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
+
         this.ae2importExportCard$importItem(player, grid, energySource, source, inventorySlot, itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
     }
 
@@ -232,7 +237,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
             return;
         }
 
-        if (!this.ae2importExportCard$passesFilter(what, filterConfig, fuzzyMode, fuzzy, invertFilter)) {
+        if (!AEKeyFilterUtil.passesFilter(what, filterConfig, fuzzyMode, fuzzy, invertFilter)) {
             return;
         }
 
@@ -281,7 +286,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
         }
 
         AEFluidKey fluidKey = AEFluidKey.of(simulatedDrain);
-        if (fluidKey == null || !this.ae2importExportCard$passesFilter(fluidKey, filterConfig, fuzzyMode, fuzzy, invertFilter)) {
+        if (fluidKey == null || !AEKeyFilterUtil.passesFilter(fluidKey, filterConfig, fuzzyMode, fuzzy, invertFilter)) {
             return;
         }
 
@@ -344,6 +349,20 @@ public abstract class MixinWirelessTerminalItem extends Item {
         } else if (exportKey instanceof AEFluidKey fluidKey) {
             this.ae2importExportCard$exportFluidToPlayerSlot(player, grid, energySource, source, inventorySlot,
                 itemInInventory, fluidKey, upgradeInventory);
+        }else if (MekanismBridge.isChemicalKey(exportKey)) {
+            long chemicalAmount = upgradeInventory.isInstalled(AEItems.SPEED_CARD)
+                ? AEFluidKey.AMOUNT_BUCKET * 64
+                : AEFluidKey.AMOUNT_BUCKET;
+
+            boolean canAcceptChemical = MekanismBridge.canAcceptChemical(itemInInventory, exportKey, chemicalAmount);
+            if (!canAcceptChemical) {
+                return;
+            }
+
+            boolean exported = MekanismBridge.exportChemicalToItem(player, grid, energySource, source, inventorySlot, itemInInventory, exportKey, chemicalAmount);
+            if (!exported) {
+                this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) chemicalAmount, upgradeInventory);
+            }
         }
     }
 
@@ -452,11 +471,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
             return;
         }
 
-        fluidHandler.fill(
-            fluidKey.toStack((int) extracted),
-            IFluidHandler.FluidAction.EXECUTE
-        );
-
+        fluidHandler.fill(fluidKey.toStack((int) extracted), IFluidHandler.FluidAction.EXECUTE);
         player.getInventory().setItem(inventorySlot, fluidHandler.getContainer());
         player.containerMenu.broadcastChanges();
     }
@@ -491,19 +506,5 @@ public abstract class MixinWirelessTerminalItem extends Item {
         }
 
         this.ae2importExportCard$craftingJob = craftingService.beginCraftingCalculation(level, () -> source, what, amount, CalculationStrategy.CRAFT_LESS);
-    }
-
-    @Unique
-    private boolean ae2importExportCard$passesFilter(AEKey what, ConfigInventory filterConfig, FuzzyMode fuzzyMode, boolean fuzzy, boolean invertFilter) {
-        boolean matchesFilter = filterConfig
-            .getAvailableStacks()
-            .findFuzzy(what, fuzzyMode)
-            .stream()
-            .anyMatch(entry -> fuzzy
-                ? what.fuzzyEquals(entry.getKey(), fuzzyMode)
-                : what.equals(entry.getKey())
-            );
-
-        return invertFilter != matchesFilter;
     }
 }
