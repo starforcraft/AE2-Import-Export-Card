@@ -131,8 +131,8 @@ publishMods {
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         projectId = "qelfSMnn"
         minecraftVersions.add(minecraft_version)
-        requires("applied-energistics-2")
-        optional("mekanism", "applied-mekanistics", "applied-flux")
+        requires("ae2")
+        optional("mekanism", "applied-mekanistics")
     }
 }
 
