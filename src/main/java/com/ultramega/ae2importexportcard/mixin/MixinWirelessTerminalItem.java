@@ -2,6 +2,7 @@ package com.ultramega.ae2importexportcard.mixin;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
+import com.ultramega.ae2importexportcard.compat.appflux.AppFluxBridge;
 import com.ultramega.ae2importexportcard.compat.mekanism.MekanismBridge;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
@@ -218,6 +219,9 @@ public abstract class MixinWirelessTerminalItem extends Item {
         MekanismBridge.importChemicalFromItem(player, grid, energySource, source, inventorySlot,
             itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
+        AppFluxBridge.importEnergyFromItem(player, grid, energySource, source, inventorySlot,
+            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
+
         this.ae2importExportCard$importItem(player, grid, energySource, source, inventorySlot, itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
     }
 
@@ -349,7 +353,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
         } else if (exportKey instanceof AEFluidKey fluidKey) {
             this.ae2importExportCard$exportFluidToPlayerSlot(player, grid, energySource, source, inventorySlot,
                 itemInInventory, fluidKey, upgradeInventory);
-        }else if (MekanismBridge.isChemicalKey(exportKey)) {
+        } else if (MekanismBridge.isChemicalKey(exportKey)) {
             long chemicalAmount = upgradeInventory.isInstalled(AEItems.SPEED_CARD)
                 ? AEFluidKey.AMOUNT_BUCKET * 64
                 : AEFluidKey.AMOUNT_BUCKET;
@@ -362,6 +366,20 @@ public abstract class MixinWirelessTerminalItem extends Item {
             boolean exported = MekanismBridge.exportChemicalToItem(player, grid, energySource, source, inventorySlot, itemInInventory, exportKey, chemicalAmount);
             if (!exported) {
                 this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) chemicalAmount, upgradeInventory);
+            }
+        } else if (AppFluxBridge.isFluxKey(exportKey)) {
+            long energyAmount = upgradeInventory.isInstalled(AEItems.SPEED_CARD)
+                ? AEFluidKey.AMOUNT_BUCKET * 64
+                : AEFluidKey.AMOUNT_BUCKET;
+
+            boolean canAcceptEnergy = AppFluxBridge.canAcceptEnergy(itemInInventory, exportKey, energyAmount);
+            if (!canAcceptEnergy) {
+                return;
+            }
+
+            boolean exported = AppFluxBridge.exportEnergyToItem(player, grid, energySource, source, inventorySlot, itemInInventory, exportKey, energyAmount);
+            if (!exported) {
+                this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) energyAmount, upgradeInventory);
             }
         }
     }

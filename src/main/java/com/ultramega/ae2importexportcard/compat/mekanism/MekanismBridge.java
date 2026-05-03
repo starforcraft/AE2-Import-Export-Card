@@ -42,18 +42,8 @@ public final class MekanismBridge {
         }
 
         try {
-            MekanismChemicalCompat.importChemicalFromItem(
-                player,
-                grid,
-                energySource,
-                source,
-                inventorySlot,
-                itemInInventory,
-                filterConfig,
-                fuzzyMode,
-                fuzzy,
-                invertFilter
-            );
+            MekanismChemicalCompat.importChemicalFromItem(player, grid, energySource, source, inventorySlot,
+                itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
         } catch (LinkageError ignored) {
         }
     }
@@ -83,16 +73,7 @@ public final class MekanismBridge {
         }
 
         try {
-            return MekanismChemicalCompat.exportChemicalToItem(
-                player,
-                grid,
-                energySource,
-                source,
-                inventorySlot,
-                itemInInventory,
-                chemicalKey,
-                amount
-            );
+            return MekanismChemicalCompat.exportChemicalToItem(player, grid, energySource, source, inventorySlot, itemInInventory, chemicalKey, amount);
         } catch (LinkageError ignored) {
             return false;
         }

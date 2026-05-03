@@ -22,6 +22,7 @@ repositories {
             includeGroup 'org.appliedenergistics'
             includeGroup 'de.mari_023'
             includeGroup 'mekanism'
+            includeGroup 'dev.technici4n'
         }
     }
     maven {
@@ -101,8 +102,12 @@ dependencies {
 
     compileOnlyApi "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:api"
     runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:all"
-    compileOnly "curse.maven:appmek-574300:${appmek_version}"
-    runtimeOnly "curse.maven:appmek-574300:${appmek_version}"
+    implementation "curse.maven:appmek-574300:${appmek_version}"
+
+    implementation "dev.technici4n:GrandPower:${grandpower_version}"
+    jarJar "dev.technici4n:GrandPower:${grandpower_version}"
+    implementation "curse.maven:appflux-965012:${appflux_version}"
+    implementation "curse.maven:glodium-957920:${glodium_version}"
 
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
 }
@@ -119,7 +124,7 @@ publishMods {
         minecraftVersions.add(minecraft_version)
         displayName = file.map { it.asFile.name }
         requires("applied-energistics-2")
-        optional("mekanism", "applied-mekanistics")
+        optional("mekanism", "applied-mekanistics", "applied-flux")
     }
 
     modrinth {
@@ -127,7 +132,7 @@ publishMods {
         projectId = "qelfSMnn"
         minecraftVersions.add(minecraft_version)
         requires("applied-energistics-2")
-        optional("mekanism", "applied-mekanistics")
+        optional("mekanism", "applied-mekanistics", "applied-flux")
     }
 }
 

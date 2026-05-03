@@ -87,32 +87,6 @@ public final class MekanismChemicalCompat {
         player.containerMenu.broadcastChanges();
     }
 
-    @Nullable
-    private static ChemicalInsertTarget getChemicalInsertTarget(ItemStack itemStack, AEKey chemicalKey, long amount) {
-        if (!(chemicalKey instanceof MekanismKey mekanismKey)) {
-            return null;
-        }
-
-        IChemicalHandler chemicalHandler = getChemicalHandler(itemStack);
-        if (chemicalHandler == null) {
-            return null;
-        }
-
-        ChemicalStack toInsert = mekanismKey.withAmount(amount);
-        ChemicalStack remainder = chemicalHandler.insertChemical(toInsert, Action.SIMULATE);
-        long insertableAmount = toInsert.getAmount() - remainder.getAmount();
-
-        if (insertableAmount <= 0) {
-            return null;
-        }
-
-        return new ChemicalInsertTarget(mekanismKey, chemicalHandler, insertableAmount);
-    }
-
-    public static boolean canAcceptChemical(ItemStack itemStack, AEKey chemicalKey, long amount) {
-        return getChemicalInsertTarget(itemStack, chemicalKey, amount) != null;
-    }
-
     public static boolean exportChemicalToItem(ServerPlayer player,
                                                IGrid grid,
                                                ActionHostEnergySource energySource,
@@ -153,6 +127,31 @@ public final class MekanismChemicalCompat {
         player.containerMenu.broadcastChanges();
 
         return true;
+    }
+
+    public static boolean canAcceptChemical(ItemStack itemStack, AEKey chemicalKey, long amount) {
+        return getChemicalInsertTarget(itemStack, chemicalKey, amount) != null;
+    }
+
+    @Nullable
+    private static ChemicalInsertTarget getChemicalInsertTarget(ItemStack itemStack, AEKey chemicalKey, long amount) {
+        if (!(chemicalKey instanceof MekanismKey mekanismKey)) {
+            return null;
+        }
+
+        IChemicalHandler chemicalHandler = getChemicalHandler(itemStack);
+        if (chemicalHandler == null) {
+            return null;
+        }
+
+        ChemicalStack toInsert = mekanismKey.withAmount(amount);
+        ChemicalStack remainder = chemicalHandler.insertChemical(toInsert, Action.SIMULATE);
+        long insertableAmount = toInsert.getAmount() - remainder.getAmount();
+        if (insertableAmount <= 0) {
+            return null;
+        }
+
+        return new ChemicalInsertTarget(mekanismKey, chemicalHandler, insertableAmount);
     }
 
     @Nullable

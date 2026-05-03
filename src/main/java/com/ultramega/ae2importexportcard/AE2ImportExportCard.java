@@ -30,6 +30,7 @@ public final class AE2ImportExportCard {
     public static final String EXPORT_CARD_ID = "export_card";
 
     public static boolean AE2WTLIB_INSTALLED = false;
+    public static boolean APPFLUX_INSTALLED = false;
     public static boolean MEKANISM_INSTALLED = false;
 
     public AE2ImportExportCard(IEventBus modEventBus) {
@@ -72,9 +73,8 @@ public final class AE2ImportExportCard {
             Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
             Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
         }
-        if (ModList.get().isLoaded("mekanism")) {
-            MEKANISM_INSTALLED = true;
-        }
+        APPFLUX_INSTALLED = ModList.get().isLoaded("appflux");
+        MEKANISM_INSTALLED = ModList.get().isLoaded("mekanism");
 
         Upgrades.add(AEItems.FUZZY_CARD, ModItems.IMPORT_CARD.get(), 1);
         Upgrades.add(AEItems.FUZZY_CARD, ModItems.EXPORT_CARD.get(), 1);
