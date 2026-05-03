@@ -3,7 +3,6 @@ package com.ultramega.ae2importexportcard.screen;
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.container.CardPlayerSlot;
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
-import com.ultramega.ae2importexportcard.network.LockSlotUpdateData;
 import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
 
@@ -51,6 +50,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private final int[] selectedInventorySlots;
     private boolean cancel = false;
     private boolean dragging = false;
+    private boolean pickedUpDraggedStack = false;
     private int clickedSlotId = -1;
 
     public UpgradeScreen(UpgradeType type, UpgradeContainerMenu containerMenu, Inventory playerInventory, Component title, ScreenStyle style) {
@@ -142,48 +142,71 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     }
 
     @Override
-    public boolean mouseClicked(double xCoord, double yCoord, int btn) {
-        ItemStack itemstack = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
-        if (itemstack.isEmpty()) {
+    public boolean mouseClicked(double xCoord, double yCoord, int button) {
+        ItemStack carried = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
+        if (carried.isEmpty()) {
             Slot slot = this.findSlot(xCoord, yCoord);
             if (slot instanceof CardPlayerSlot) {
+                // Let vanilla handle shift-clicks normally
                 if (hasShiftDown() && !slot.getItem().isEmpty()) {
-                    this.cancel = true;
+                    return super.mouseClicked(xCoord, yCoord, button);
                 }
-                if (!this.cancel) {
-                    this.clickedSlotId = slot.index;
-                    PacketDistributor.sendToServer(new LockSlotUpdateData(this.clickedSlotId, true));
-                }
+
+                this.cancel = false;
+                this.dragging = false;
+                this.pickedUpDraggedStack = false;
+                this.clickedSlotId = slot.index;
+
+                return true;
             }
         }
 
-        return super.mouseClicked(xCoord, yCoord, btn);
+        return super.mouseClicked(xCoord, yCoord, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        this.dragging = true;
+        if (this.clickedSlotId != -1 && !this.pickedUpDraggedStack) {
+            ItemStack carried = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
+            if (carried.isEmpty()) {
+                this.slotClicked(this.menu.slots.get(this.clickedSlotId), this.clickedSlotId, button, ClickType.PICKUP);
+                this.pickedUpDraggedStack = true;
+            }
+        }
+
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        boolean handled = false;
+
         Slot slot = this.findSlot(mouseX, mouseY);
-        if (!this.cancel && slot instanceof CardPlayerSlot) {
-            ItemStack itemstack = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
-            if ((!this.dragging || (slot.getItem().isEmpty() && slot.index == this.clickedSlotId)) && itemstack.isEmpty()) {
+        if (!this.cancel && !this.dragging && slot instanceof CardPlayerSlot && slot.index == this.clickedSlotId) {
+            ItemStack carried = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
+            if (carried.isEmpty()) {
                 int slotId = slot.getContainerSlot();
                 if (slotId >= 0 && slotId < this.selectedInventorySlots.length) {
                     if (button == 0) {
                         this.increaseSelectedInventorySlot(this.type, slotId);
+                        handled = true;
                     } else if (button == 1) {
                         this.selectedInventorySlots[slotId] = 0;
-                    } else {
-                        return super.mouseReleased(mouseX, mouseY, button);
+                        handled = true;
                     }
 
-                    this.sendUpdate();
-                    this.playClickSound();
+                    if (handled) {
+                        this.sendUpdate();
+                        this.playClickSound();
+                    }
                 }
             }
         }
 
         this.cancel = false;
         this.dragging = false;
+        this.pickedUpDraggedStack = false;
         this.clickedSlotId = -1;
 
         // Check mass select buttons
@@ -201,22 +224,14 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
                     this.selectedInventorySlots[i] = 0;
                 }
             }
+
             this.sendUpdate();
             this.playClickSound();
+
+            handled = true;
         }
 
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        this.dragging = true;
-        ItemStack itemstack = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
-        if (this.clickedSlotId != -1 && itemstack.isEmpty()) {
-            this.slotClicked(this.menu.slots.get(this.clickedSlotId), this.clickedSlotId, button, ClickType.PICKUP);
-        }
-
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return handled || super.mouseReleased(mouseX, mouseY, button);
     }
 
     private void increaseSelectedInventorySlot(UpgradeType type, int index) {

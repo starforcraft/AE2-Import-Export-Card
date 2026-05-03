@@ -1,7 +1,6 @@
 package com.ultramega.ae2importexportcard;
 
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
-import com.ultramega.ae2importexportcard.network.LockSlotUpdateData;
 import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
 import com.ultramega.ae2importexportcard.registry.ModCreativeTabs;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
@@ -42,7 +41,6 @@ public final class AE2ImportExportCard {
 
         modEventBus.addListener((RegisterPayloadHandlersEvent event) -> {
             PayloadRegistrar registrar = event.registrar(MODID);
-            registrar.playBidirectional(LockSlotUpdateData.TYPE, LockSlotUpdateData.STREAM_CODEC, LockSlotUpdateData::handle);
             registrar.playBidirectional(UpgradeUpdateData.TYPE, UpgradeUpdateData.STREAM_CODEC, UpgradeUpdateData::handle);
         });
 
