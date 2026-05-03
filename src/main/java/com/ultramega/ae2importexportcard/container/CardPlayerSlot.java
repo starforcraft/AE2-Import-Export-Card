@@ -9,8 +9,8 @@ import org.jetbrains.annotations.NotNull;
 public class CardPlayerSlot extends Slot {
     private boolean cancelPickup = false;
 
-    public CardPlayerSlot(Container inventory, int invSlot) {
-        super(inventory, invSlot, 0, 0);
+    public CardPlayerSlot(Container inventory, int invSlot, int x, int y) {
+        super(inventory, invSlot, x, y);
     }
 
     @Override

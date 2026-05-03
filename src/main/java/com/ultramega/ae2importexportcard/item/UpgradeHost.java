@@ -26,6 +26,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 
 public class UpgradeHost implements IConfigurableObject {
+    public static final int SELECTED_INVENTORY_SLOT_COUNT = 40;
+
     public final ConfigInventory filterConfig = ConfigInventory.configTypes(18)
             .changeListener(this::updateFilter)
             .build();
@@ -74,12 +76,14 @@ public class UpgradeHost implements IConfigurableObject {
     }
 
     public void setSelectedInventorySlots(int[] selectedInventorySlots) {
+        int[] normalizedSelectedInventorySlots = normalizeSelectedInventorySlots(selectedInventorySlots);
+
         ItemContainerContents upgrades = this.itemStack.getOrDefault(AEComponents.UPGRADES, ItemContainerContents.EMPTY);
         List<ItemStack> stacks = new ArrayList<>();
         for (int i = 0; i < upgrades.getSlots(); i++) {
             ItemStack stack = upgrades.getStackInSlot(i);
             if (AE2ImportExportCard.isImportOrExportCard(this.type, stack)) {
-                stack.set(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(selectedInventorySlots));
+                stack.set(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(normalizedSelectedInventorySlots));
             }
             stacks.add(stack);
         }
@@ -92,11 +96,32 @@ public class UpgradeHost implements IConfigurableObject {
         for (int i = 0; i < upgrades.getSlots(); i++) {
             ItemStack stack = upgrades.getStackInSlot(i);
             if (AE2ImportExportCard.isImportOrExportCard(this.type, stack)) {
-                return stack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(new int[36])).toIntArray();
+                int[] selectedInventorySlots = stack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT]))
+                    .toIntArray();
+
+                return normalizeSelectedInventorySlots(selectedInventorySlots);
             }
         }
 
-        return new int[36];
+        return new int[SELECTED_INVENTORY_SLOT_COUNT];
+    }
+
+    /// Required because of the addition of armor slots, remove in 26.1.2
+    @Deprecated(forRemoval = true)
+    public static int[] normalizeSelectedInventorySlots(int[] selectedInventorySlots) {
+        if (selectedInventorySlots == null) {
+            return new int[SELECTED_INVENTORY_SLOT_COUNT];
+        }
+
+        if (selectedInventorySlots.length == SELECTED_INVENTORY_SLOT_COUNT) {
+            return selectedInventorySlots;
+        }
+
+        int[] normalized = new int[SELECTED_INVENTORY_SLOT_COUNT];
+
+        System.arraycopy(selectedInventorySlots, 0, normalized, 0, Math.min(selectedInventorySlots.length, SELECTED_INVENTORY_SLOT_COUNT));
+
+        return normalized;
     }
 
     public IUpgradeInventory getUpgrades() {

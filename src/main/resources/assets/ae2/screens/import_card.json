@@ -4,13 +4,23 @@
   "helpTopic": "ae2importexportcard-index.md",
   "background": {
     "texture": "ae2importexportcard:textures/gui/upgrade.png",
-    "srcRect": [0, 0, 176, 163]
+    "srcRect": [0, 0, 191, 163]
   },
   "slots": {
     "AE2IMPORTEXPORTCARD_IMPORT_CONFIG": {
-      "left": 8,
+      "left": 23,
       "top": 29,
       "grid": "BREAK_AFTER_9COLS"
+    },
+    "PLAYER_INVENTORY": {
+      "left": 23,
+      "bottom": 84,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "PLAYER_HOTBAR": {
+      "left": 23,
+      "bottom": 26,
+      "grid": "HORIZONTAL"
     }
   },
   "text": {
@@ -19,14 +29,27 @@
         "translate": "item.ae2importexportcard.import_card"
       },
       "position": {
-        "left": 8,
+        "left": 23,
         "top": 6
+      }
+    },
+    "player_inventory_title": {
+      "text": {
+        "translate": "container.inventory"
+      },
+      "position": {
+        "left": 23,
+        "bottom": 95
       }
     }
   },
   "widgets": {
+    "verticalToolbar": {
+      "left": 18,
+      "top": 1
+    },
     "back": {
-      "left": 152,
+      "left": 167,
       "top": -5,
       "width": 20,
       "height": 20
