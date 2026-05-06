@@ -1,4 +1,4 @@
-package com.ultramega.ae2importexportcard.compat.ae2wtlib;
+/*package com.ultramega.ae2importexportcard.compat.ae2wtlib;
 
 import appeng.api.networking.IGrid;
 import appeng.items.tools.powered.WirelessTerminalItem;
@@ -22,3 +22,4 @@ public final class Ae2WtlibUtil {
         return null;
     }
 }
+*/

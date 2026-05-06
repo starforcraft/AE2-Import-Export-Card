@@ -1,4 +1,4 @@
-package com.ultramega.ae2importexportcard.compat.appflux;
+/*package com.ultramega.ae2importexportcard.compat.appflux;
 
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
 
@@ -155,3 +155,4 @@ public final class AppFluxEnergyCompat {
     private record EnergyInsertTarget(FluxKey key, ILongEnergyStorage handler, long insertableAmount) {
     }
 }
+*/

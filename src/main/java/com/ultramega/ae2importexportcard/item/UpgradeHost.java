@@ -20,10 +20,14 @@ import appeng.util.ConfigInventory;
 import appeng.util.inv.AppEngInternalInventory;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 
 public class UpgradeHost implements IConfigurableObject {
     public static final int SELECTED_INVENTORY_SLOT_COUNT = 40;
@@ -46,15 +50,19 @@ public class UpgradeHost implements IConfigurableObject {
 
         ItemContainerContents upgrades = this.itemStack.getOrDefault(AEComponents.UPGRADES, ItemContainerContents.EMPTY);
         for (int i = 0; i < upgrades.getSlots(); i++) {
-            ItemStack stack = upgrades.getStackInSlot(i);
-            if (AE2ImportExportCard.isImportOrExportCard(type, stack)) {
-                this.upgradeStack = stack;
+            ItemStack cardStack = upgrades.getStackInSlot(i);
+            if (AE2ImportExportCard.isImportOrExportCard(type, cardStack)) {
+                this.upgradeStack = cardStack;
 
-                this.configManager = CardConfigManager.builder(type, this.itemStack, stack)
-                        .registerSetting(Settings.FUZZY_MODE, FuzzyMode.IGNORE_ALL)
-                        .build();
+                this.configManager = CardConfigManager.builder(type, this.itemStack, cardStack)
+                    .registerSetting(Settings.FUZZY_MODE, FuzzyMode.IGNORE_ALL)
+                    .build();
 
-                this.filterConfig.readFromChildTag(stack.getOrDefault(ModDataComponents.FILTER_CONFIG, new CompoundTag()), "", this.player.registryAccess());
+                ValueInput filterInput = TagValueInput.create(ProblemReporter.DISCARDING, this.player.registryAccess(),
+                    cardStack.getOrDefault(ModDataComponents.FILTER_CONFIG, new CompoundTag()));
+                this.filterConfig.readFromChildTag(filterInput, "");
+
+                break;
             }
         }
     }
@@ -65,9 +73,9 @@ public class UpgradeHost implements IConfigurableObject {
         for (int i = 0; i < upgrades.getSlots(); i++) {
             ItemStack stack = upgrades.getStackInSlot(i);
             if (AE2ImportExportCard.isImportOrExportCard(this.type, stack)) {
-                CompoundTag tag = stack.getOrDefault(ModDataComponents.FILTER_CONFIG, new CompoundTag());
-                this.filterConfig.writeToChildTag(tag, "", this.player.registryAccess());
-                stack.set(ModDataComponents.FILTER_CONFIG, tag);
+                TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, this.player.registryAccess());
+                this.filterConfig.writeToChildTag(output, "");
+                stack.set(ModDataComponents.FILTER_CONFIG, output.buildResult());
             }
             stacks.add(stack);
         }
@@ -76,14 +84,12 @@ public class UpgradeHost implements IConfigurableObject {
     }
 
     public void setSelectedInventorySlots(int[] selectedInventorySlots) {
-        int[] normalizedSelectedInventorySlots = normalizeSelectedInventorySlots(selectedInventorySlots);
-
         ItemContainerContents upgrades = this.itemStack.getOrDefault(AEComponents.UPGRADES, ItemContainerContents.EMPTY);
         List<ItemStack> stacks = new ArrayList<>();
         for (int i = 0; i < upgrades.getSlots(); i++) {
             ItemStack stack = upgrades.getStackInSlot(i);
             if (AE2ImportExportCard.isImportOrExportCard(this.type, stack)) {
-                stack.set(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(normalizedSelectedInventorySlots));
+                stack.set(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(selectedInventorySlots));
             }
             stacks.add(stack);
         }
@@ -96,32 +102,12 @@ public class UpgradeHost implements IConfigurableObject {
         for (int i = 0; i < upgrades.getSlots(); i++) {
             ItemStack stack = upgrades.getStackInSlot(i);
             if (AE2ImportExportCard.isImportOrExportCard(this.type, stack)) {
-                int[] selectedInventorySlots = stack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT]))
+                return stack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT]))
                     .toIntArray();
-
-                return normalizeSelectedInventorySlots(selectedInventorySlots);
             }
         }
 
         return new int[SELECTED_INVENTORY_SLOT_COUNT];
-    }
-
-    /// Required because of the addition of armor slots, remove in 26.1.2
-    @Deprecated(forRemoval = true)
-    public static int[] normalizeSelectedInventorySlots(int[] selectedInventorySlots) {
-        if (selectedInventorySlots == null) {
-            return new int[SELECTED_INVENTORY_SLOT_COUNT];
-        }
-
-        if (selectedInventorySlots.length == SELECTED_INVENTORY_SLOT_COUNT) {
-            return selectedInventorySlots;
-        }
-
-        int[] normalized = new int[SELECTED_INVENTORY_SLOT_COUNT];
-
-        System.arraycopy(selectedInventorySlots, 0, normalized, 0, Math.min(selectedInventorySlots.length, SELECTED_INVENTORY_SLOT_COUNT));
-
-        return normalized;
     }
 
     public IUpgradeInventory getUpgrades() {

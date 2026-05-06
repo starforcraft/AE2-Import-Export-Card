@@ -1,4 +1,4 @@
-package com.ultramega.ae2importexportcard.compat.mekanism;
+/*package com.ultramega.ae2importexportcard.compat.mekanism;
 
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
 
@@ -166,3 +166,4 @@ public final class MekanismChemicalCompat {
     private record ChemicalInsertTarget(MekanismKey key, IChemicalHandler handler, long insertableAmount) {
     }
 }
+*/

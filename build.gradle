@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.116'
+    id 'net.neoforged.moddev' version '2.0.141'
     id 'idea'
     id 'me.modmuss50.mod-publish-plugin' version '1.0.0'
 }
@@ -41,15 +41,10 @@ base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
     version = project.neo_version
-
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
 
     accessTransformers = project.files('src/main/templates/META-INF/accesstransformer.cfg')
 
@@ -71,7 +66,7 @@ neoForge {
         }
 
         data {
-            data()
+            clientData()
             programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
 
@@ -97,19 +92,15 @@ configurations {
 dependencies {
     implementation "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
-    compileOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
-    runtimeOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
+//    compileOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
+//    runtimeOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
 
-    compileOnlyApi "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:api"
-    runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:all"
-    implementation "curse.maven:appmek-574300:${appmek_version}"
-
-    implementation "dev.technici4n:GrandPower:${grandpower_version}"
-    jarJar "dev.technici4n:GrandPower:${grandpower_version}"
-    implementation "curse.maven:appflux-965012:${appflux_version}"
-    implementation "curse.maven:glodium-957920:${glodium_version}"
-
-    runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
+//    compileOnlyApi "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:api"
+//    runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:all"
+//    implementation "curse.maven:appmek-574300:${appmek_version}"
+//
+//    implementation "curse.maven:appflux-965012:${appflux_version}"
+//    implementation "curse.maven:glodium-957920:${glodium_version}"
 }
 
 publishMods {
@@ -124,7 +115,7 @@ publishMods {
         minecraftVersions.add(minecraft_version)
         displayName = file.map { it.asFile.name }
         requires("applied-energistics-2")
-        optional("mekanism", "applied-mekanistics", "applied-flux")
+//        optional("mekanism", "applied-mekanistics", "applied-flux")
     }
 
     modrinth {
@@ -132,7 +123,7 @@ publishMods {
         projectId = "qelfSMnn"
         minecraftVersions.add(minecraft_version)
         requires("ae2")
-        optional("mekanism", "applied-mekanistics")
+//        optional("mekanism", "applied-mekanistics")
     }
 }
 
@@ -142,11 +133,9 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
             neo_version_range      : neo_version_range,
-            loader_version_range   : loader_version_range,
             ae2_version            : ae2_version,
             ae2_version_range      : ae2_version_range,
             ae2wtlib_version       : ae2wtlib_version,
-            emi_version            : emi_version,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_url                : mod_url,

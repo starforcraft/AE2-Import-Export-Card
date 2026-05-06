@@ -1,9 +1,6 @@
 package com.ultramega.ae2importexportcard.mixin;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
-import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
-import com.ultramega.ae2importexportcard.compat.appflux.AppFluxBridge;
-import com.ultramega.ae2importexportcard.compat.mekanism.MekanismBridge;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
@@ -38,22 +35,28 @@ import appeng.menu.locator.MenuLocators;
 import appeng.util.ConfigInventory;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
-import org.jetbrains.annotations.NotNull;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
 import static com.ultramega.ae2importexportcard.item.UpgradeHost.SELECTED_INVENTORY_SLOT_COUNT;
-import static com.ultramega.ae2importexportcard.item.UpgradeHost.normalizeSelectedInventorySlots;
 
 @Mixin(WirelessTerminalItem.class)
 public abstract class MixinWirelessTerminalItem extends Item {
@@ -71,27 +74,27 @@ public abstract class MixinWirelessTerminalItem extends Item {
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack terminalStack, @NotNull Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(terminalStack, level, entity, slotId, isSelected);
+    public void inventoryTick(final ItemStack itemStack, final ServerLevel level, final Entity owner, @Nullable final EquipmentSlot slot) {
+        super.inventoryTick(itemStack, level, owner, slot);
 
         if (level.isClientSide()
-            || !(entity instanceof ServerPlayer player)
-            || !(terminalStack.getItem() instanceof WirelessTerminalItem wirelessTerminalItem)) {
+            || !(owner instanceof ServerPlayer player)
+            || !(itemStack.getItem() instanceof WirelessTerminalItem wirelessTerminalItem)) {
             return;
         }
 
         // This also checks if we are in access point range
-        IGrid grid = this.ae2importExportCard$getGrid(wirelessTerminalItem, player, terminalStack, level);
+        IGrid grid = this.ae2importExportCard$getGrid(wirelessTerminalItem, player, itemStack, level);
         if (grid == null || grid.getStorageService() == null) {
             return;
         }
 
-        WirelessTerminalMenuHost<?> host = this.ae2importExportCard$getHost(wirelessTerminalItem, player, terminalStack);
+        WirelessTerminalMenuHost<?> host = this.ae2importExportCard$getHost(wirelessTerminalItem, player, itemStack);
         if (host == null || host.getActionableNode() == null) {
             return;
         }
 
-        this.ae2importExportCard$tickUpgradeCards(terminalStack, player, level, grid, host);
+        this.ae2importExportCard$tickUpgradeCards(itemStack, player, level, grid, host);
     }
 
     @Unique
@@ -99,7 +102,8 @@ public abstract class MixinWirelessTerminalItem extends Item {
         IGrid grid = null;
 
         if (AE2ImportExportCard.AE2WTLIB_INSTALLED) {
-            grid = Ae2WtlibUtil.getGridFromStack(wirelessTerminalItem, player, terminalStack);
+            // TODO: re-enable once AE2WTLIB has ported
+//            grid = Ae2WtlibUtil.getGridFromStack(wirelessTerminalItem, player, terminalStack);
         }
 
         if (grid == null) {
@@ -143,8 +147,8 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                      IGrid grid,
                                                      WirelessTerminalMenuHost<?> host,
                                                      boolean importMode) {
-        int[] selectedInventorySlots = normalizeSelectedInventorySlots(upgradeStack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS,
-            new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT])).toIntArray());
+        int[] selectedInventorySlots = upgradeStack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS,
+            new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT])).toIntArray();
         ConfigInventory filterConfig = this.ae2importExportCard$getFilterConfig(upgradeStack, player);
         IUpgradeInventory upgradeInventory = UpgradeInventories.forItem(upgradeStack, ae2importExportCard$UPGRADE_CARD_SLOT_COUNT, null);
 
@@ -184,7 +188,10 @@ public abstract class MixinWirelessTerminalItem extends Item {
         ConfigInventory filterConfig = ConfigInventory.configTypes(ae2importExportCard$FILTER_SIZE)
             .changeListener(null)
             .build();
-        filterConfig.readFromChildTag(upgradeStack.getOrDefault(ModDataComponents.FILTER_CONFIG, new CompoundTag()), "", player.registryAccess());
+
+        ValueInput filterInput = TagValueInput.create(ProblemReporter.DISCARDING, player.registryAccess(),
+            upgradeStack.getOrDefault(ModDataComponents.FILTER_CONFIG, new CompoundTag()));
+        filterConfig.readFromChildTag(filterInput, "");
 
         return filterConfig;
     }
@@ -216,11 +223,11 @@ public abstract class MixinWirelessTerminalItem extends Item {
         this.ae2importExportCard$importFluidFromItem(player, grid, energySource, source, inventorySlot,
             itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
-        MekanismBridge.importChemicalFromItem(player, grid, energySource, source, inventorySlot,
+        /*MekanismBridge.importChemicalFromItem(player, grid, energySource, source, inventorySlot,
             itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
         AppFluxBridge.importEnergyFromItem(player, grid, energySource, source, inventorySlot,
-            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
+            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);*/
 
         this.ae2importExportCard$importItem(player, grid, energySource, source, inventorySlot, itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
     }
@@ -279,40 +286,59 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                          FuzzyMode fuzzyMode,
                                                          boolean fuzzy,
                                                          boolean invertFilter) {
-        var fluidHandler = itemInInventory.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = itemInInventory.getCapability(Capabilities.Fluid.ITEM, ItemAccess.forPlayerSlot(player, inventorySlot));
         if (fluidHandler == null) {
             return;
         }
 
-        FluidStack simulatedDrain = fluidHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
-        if (simulatedDrain.isEmpty()) {
-            return;
-        }
+        for (int i = 0; i < fluidHandler.size(); i++) {
+            FluidResource resource = fluidHandler.getResource(i);
+            if (resource.isEmpty()) {
+                continue;
+            }
 
-        AEFluidKey fluidKey = AEFluidKey.of(simulatedDrain);
-        if (fluidKey == null || !AEKeyFilterUtil.passesFilter(fluidKey, filterConfig, fuzzyMode, fuzzy, invertFilter)) {
-            return;
-        }
+            AEFluidKey fluidKey = AEFluidKey.of(resource);
+            if (fluidKey == null || !AEKeyFilterUtil.passesFilter(fluidKey, filterConfig, fuzzyMode, fuzzy, invertFilter)) {
+                continue;
+            }
 
-        long insertable = StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), fluidKey,
-            simulatedDrain.getAmount(), source, Actionable.SIMULATE);
-        if (insertable <= 0) {
-            return;
-        }
+            int extractable;
+            try (Transaction tx = Transaction.openRoot()) {
+                extractable = fluidHandler.extract(resource, Integer.MAX_VALUE, tx);
+            }
+            if (extractable <= 0) {
+                continue;
+            }
 
-        FluidStack drained = fluidHandler.drain((int) insertable, IFluidHandler.FluidAction.EXECUTE);
-        if (drained.isEmpty()) {
-            return;
-        }
+            long insertable = StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), fluidKey, extractable, source, Actionable.SIMULATE);
+            if (insertable <= 0) {
+                continue;
+            }
 
-        AEFluidKey drainedKey = AEFluidKey.of(drained);
-        if (drainedKey == null) {
-            return;
-        }
+            int amountToMove = (int) Math.min(insertable, Integer.MAX_VALUE);
+            try (Transaction tx = Transaction.openRoot()) {
+                int extracted = fluidHandler.extract(resource, amountToMove, tx);
+                if (extracted <= 0) {
+                    continue;
+                }
 
-        StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), drainedKey, drained.getAmount(), source, Actionable.MODULATE);
-        player.getInventory().setItem(inventorySlot, fluidHandler.getContainer());
-        player.containerMenu.broadcastChanges();
+                long inserted = StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), fluidKey, extracted, source, Actionable.MODULATE);
+                if (inserted <= 0) {
+                    continue;
+                }
+
+                if (inserted < extracted) {
+                    int remainder = extracted - (int) inserted;
+                    int returned = fluidHandler.insert(resource, remainder, tx);
+
+                    if (returned != remainder) {
+                        continue;
+                    }
+                }
+
+                tx.commit();
+            }
+        }
     }
 
     @Unique
@@ -342,18 +368,18 @@ public abstract class MixinWirelessTerminalItem extends Item {
             return;
         }
 
-        IItemHandler playerInventory = player.getCapability(Capabilities.ItemHandler.ENTITY);
-        if (playerInventory == null) {
+        var itemHandler = player.getCapability(Capabilities.Item.ENTITY, null);
+        if (itemHandler == null) {
             return;
         }
 
         if (exportKey instanceof AEItemKey itemKey) {
             this.ae2importExportCard$exportItemToPlayerSlot(player, level, grid, energySource, source, inventorySlot,
-                itemInInventory, itemKey, filter.what(), playerInventory, upgradeInventory);
+                itemInInventory, itemKey, filter.what(), itemHandler, upgradeInventory);
         } else if (exportKey instanceof AEFluidKey fluidKey) {
             this.ae2importExportCard$exportFluidToPlayerSlot(player, grid, energySource, source, inventorySlot,
                 itemInInventory, fluidKey, upgradeInventory);
-        } else if (MekanismBridge.isChemicalKey(exportKey)) {
+        } /*else if (MekanismBridge.isChemicalKey(exportKey)) {
             long chemicalAmount = upgradeInventory.isInstalled(AEItems.SPEED_CARD)
                 ? AEFluidKey.AMOUNT_BUCKET * 64
                 : AEFluidKey.AMOUNT_BUCKET;
@@ -381,7 +407,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
             if (!exported) {
                 this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) energyAmount, upgradeInventory);
             }
-        }
+        }*/
     }
 
     @Unique
@@ -409,50 +435,45 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                             ItemStack itemInInventory,
                                                             AEItemKey itemKey,
                                                             AEKey craftingKey,
-                                                            IItemHandler playerInventory,
+                                                            ResourceHandler<ItemResource> playerInventory,
                                                             IUpgradeInventory upgradeInventory) {
-        ItemStack prototype = itemKey.toStack(1);
-
-        int slotLimit = playerInventory.getSlotLimit(inventorySlot);
-        int maxStackSize = Math.min(slotLimit, prototype.getMaxStackSize());
-        int currentCount = itemInInventory.isEmpty() ? 0 : itemInInventory.getCount();
-        int remainingSpace = maxStackSize - currentCount;
-        if (remainingSpace <= 0) {
+        ItemResource resource = itemKey.toResource();
+        if (resource.isEmpty()) {
             return;
         }
 
         int stackInteractionSize = upgradeInventory.isInstalled(AEItems.SPEED_CARD) ? 64 : 1;
-        int requestedAmount = Math.min(stackInteractionSize, remainingSpace);
 
-        long extractable = StorageHelper.poweredExtraction(
-            energySource,
-            grid.getStorageService().getInventory(),
-            itemKey,
-            requestedAmount,
-            source,
-            Actionable.SIMULATE
-        );
+        int requestedAmount;
+        try (Transaction tx = Transaction.openRoot()) {
+            requestedAmount = playerInventory.insert(inventorySlot, resource, stackInteractionSize, tx);
+        }
+        if (requestedAmount <= 0) {
+            return;
+        }
 
+        long extractable = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), itemKey, requestedAmount, source, Actionable.SIMULATE);
         if (extractable <= 0) {
             this.ae2importExportCard$requestCraftingIfPossible(level, grid, craftingKey, requestedAmount, upgradeInventory);
             return;
         }
 
         int amountToInsert = (int) Math.min(extractable, requestedAmount);
-        ItemStack simulatedInsertStack = itemKey.toStack(amountToInsert);
-        ItemStack remainder = playerInventory.insertItem(inventorySlot, simulatedInsertStack, true);
-        int acceptedAmount = simulatedInsertStack.getCount() - remainder.getCount();
-        if (acceptedAmount <= 0) {
-            return;
-        }
-
-        long extracted = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), itemKey, acceptedAmount, source, Actionable.MODULATE);
+        long extracted = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), itemKey, amountToInsert, source, Actionable.MODULATE);
         if (extracted <= 0) {
             return;
         }
 
-        playerInventory.insertItem(inventorySlot, itemKey.toStack((int) extracted), false);
-        player.containerMenu.broadcastChanges();
+        try (Transaction tx = Transaction.openRoot()) {
+            int inserted = playerInventory.insert(inventorySlot, resource, (int) Math.min(extracted, Integer.MAX_VALUE), tx);
+            if (inserted != extracted) {
+                // Roll back
+                StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), itemKey, extracted, source, Actionable.MODULATE);
+                return;
+            }
+
+            tx.commit();
+        }
     }
 
     @Unique
@@ -464,8 +485,13 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                              ItemStack itemInInventory,
                                                              AEFluidKey fluidKey,
                                                              IUpgradeInventory upgradeInventory) {
-        var fluidHandler = itemInInventory.getCapability(Capabilities.FluidHandler.ITEM);
+        var fluidHandler = itemInInventory.getCapability(Capabilities.Fluid.ITEM, ItemAccess.forPlayerSlot(player, inventorySlot));
         if (fluidHandler == null) {
+            return;
+        }
+
+        FluidResource resource = fluidKey.toResource();
+        if (resource.isEmpty()) {
             return;
         }
 
@@ -473,25 +499,34 @@ public abstract class MixinWirelessTerminalItem extends Item {
             ? AEFluidKey.AMOUNT_BUCKET * 64
             : AEFluidKey.AMOUNT_BUCKET;
 
-        long extractable = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), fluidKey,
-            stackInteractionSize, source, Actionable.SIMULATE);
+        long extractable = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), fluidKey, stackInteractionSize, source, Actionable.SIMULATE);
         if (extractable <= 0) {
             return;
         }
 
-        int fillableAmount = fluidHandler.fill(fluidKey.toStack((int) extractable), IFluidHandler.FluidAction.SIMULATE);
-        if (fillableAmount <= 0) {
+        int insertable;
+        try (Transaction tx = Transaction.openRoot()) {
+            insertable = fluidHandler.insert(resource, (int) Math.min(extractable, Integer.MAX_VALUE), tx);
+        }
+        if (insertable <= 0) {
             return;
         }
 
-        long extracted = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), fluidKey, fillableAmount, source, Actionable.MODULATE);
+        long extracted = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), fluidKey, insertable, source, Actionable.MODULATE);
         if (extracted <= 0) {
             return;
         }
 
-        fluidHandler.fill(fluidKey.toStack((int) extracted), IFluidHandler.FluidAction.EXECUTE);
-        player.getInventory().setItem(inventorySlot, fluidHandler.getContainer());
-        player.containerMenu.broadcastChanges();
+        try (Transaction tx = Transaction.openRoot()) {
+            int inserted = fluidHandler.insert(resource, (int) Math.min(extracted, Integer.MAX_VALUE), tx);
+            if (inserted != extracted) {
+                // Roll back
+                StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), fluidKey, extracted, source, Actionable.MODULATE);
+                return;
+            }
+
+            tx.commit();
+        }
     }
 
     @Unique

@@ -9,10 +9,10 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ModCreativeTabs {
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, AE2ImportExportCard.MODID);
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, AE2ImportExportCard.MOD_ID);
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB_AE2IMPORTEXPORTCARD = CREATIVE_MODE_TABS.register(AE2ImportExportCard.MODID + "_tab", () -> CreativeModeTab.builder()
-        .title(Component.translatable("itemGroup." + AE2ImportExportCard.MODID))
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB_AE2IMPORTEXPORTCARD = CREATIVE_MODE_TABS.register(AE2ImportExportCard.MOD_ID + "_tab", () -> CreativeModeTab.builder()
+        .title(Component.translatable("itemGroup." + AE2ImportExportCard.MOD_ID))
         .icon(() -> ModItems.IMPORT_CARD.get().getDefaultInstance())
         .displayItems(ModItems.ITEMS.getEntries())
         .build());

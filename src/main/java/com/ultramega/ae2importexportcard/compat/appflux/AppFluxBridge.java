@@ -1,4 +1,4 @@
-package com.ultramega.ae2importexportcard.compat.appflux;
+/*package com.ultramega.ae2importexportcard.compat.appflux;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 
@@ -79,3 +79,4 @@ public final class AppFluxBridge {
         }
     }
 }
+*/

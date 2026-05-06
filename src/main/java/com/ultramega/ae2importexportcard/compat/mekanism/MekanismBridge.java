@@ -1,4 +1,4 @@
-package com.ultramega.ae2importexportcard.compat.mekanism;
+/*package com.ultramega.ae2importexportcard.compat.mekanism;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 
@@ -78,4 +78,4 @@ public final class MekanismBridge {
             return false;
         }
     }
-}
+}*/

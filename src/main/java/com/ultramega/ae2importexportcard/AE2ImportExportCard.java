@@ -9,10 +9,9 @@ import com.ultramega.ae2importexportcard.screen.UpgradeScreen;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
 
 import appeng.api.upgrades.Upgrades;
+import appeng.client.InitScreens;
 import appeng.core.definitions.AEItems;
-import appeng.init.client.InitScreens;
-import de.mari_023.ae2wtlib.AE2wtlibItems;
-import de.mari_023.ae2wtlib.api.AE2wtlibAPI;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
@@ -22,9 +21,9 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@Mod(AE2ImportExportCard.MODID)
+@Mod(AE2ImportExportCard.MOD_ID)
 public final class AE2ImportExportCard {
-    public static final String MODID = "ae2importexportcard";
+    public static final String MOD_ID = "ae2importexportcard";
 
     public static final String IMPORT_CARD_ID = "import_card";
     public static final String EXPORT_CARD_ID = "export_card";
@@ -41,8 +40,8 @@ public final class AE2ImportExportCard {
         ModItems.ITEMS.register(modEventBus);
 
         modEventBus.addListener((RegisterPayloadHandlersEvent event) -> {
-            PayloadRegistrar registrar = event.registrar(MODID);
-            registrar.playBidirectional(UpgradeUpdateData.TYPE, UpgradeUpdateData.STREAM_CODEC, UpgradeUpdateData::handle);
+            PayloadRegistrar registrar = event.registrar(MOD_ID);
+            registrar.playBidirectional(UpgradeUpdateData.TYPE, UpgradeUpdateData.STREAM_CODEC, UpgradeUpdateData::handle, UpgradeUpdateData::handle);
         });
 
         modEventBus.addListener(this::registerScreens);
@@ -68,10 +67,11 @@ public final class AE2ImportExportCard {
         if (ModList.get().isLoaded("ae2wtlib")) {
             AE2WTLIB_INSTALLED = true;
 
-            Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
-            Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
-            Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
-            Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
+            // TODO: re-enable once AE2WTLIB has ported
+//            Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
+//            Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
+//            Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
+//            Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
         }
         APPFLUX_INSTALLED = ModList.get().isLoaded("appflux");
         MEKANISM_INSTALLED = ModList.get().isLoaded("mekanism");
@@ -81,6 +81,10 @@ public final class AE2ImportExportCard {
         Upgrades.add(AEItems.INVERTER_CARD, ModItems.IMPORT_CARD.get(), 1);
         Upgrades.add(AEItems.CRAFTING_CARD, ModItems.EXPORT_CARD.get(), 1);
         Upgrades.add(AEItems.SPEED_CARD, ModItems.EXPORT_CARD.get(), 1);
+    }
+
+    public static Identifier makeId(final String id) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, id);
     }
 
     public static boolean isImportOrExportCard(UpgradeType type, ItemStack upgrade) {

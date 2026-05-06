@@ -1,6 +1,5 @@
 package com.ultramega.ae2importexportcard.mixin;
 
-import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.registry.ModItems;
 import com.ultramega.ae2importexportcard.screen.UpgradeItemButton;
 import com.ultramega.ae2importexportcard.util.UpgradeInterface;
@@ -10,10 +9,9 @@ import appeng.api.storage.ITerminalHost;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.me.common.MEStorageScreen;
 import appeng.client.gui.style.ScreenStyle;
-import appeng.menu.AEBaseMenu;
+import appeng.menu.SlotSemantics;
 import appeng.menu.me.common.MEStorageMenu;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,13 +20,15 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import static com.ultramega.ae2importexportcard.AE2ImportExportCard.makeId;
+
 @Mixin(MEStorageScreen.class)
-public abstract class MixinMEStorageScreen extends AEBaseScreen {
+public abstract class MixinMEStorageScreen<C extends MEStorageMenu> extends AEBaseScreen<C> {
     @Unique
     @Final
     private final UpgradeItemButton[] ae2importExportCard$upgradeCardButton = new UpgradeItemButton[2];
 
-    public MixinMEStorageScreen(AEBaseMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
+    public MixinMEStorageScreen(final C menu, final Inventory playerInventory, final Component title, final ScreenStyle style) {
         super(menu, playerInventory, title, style);
     }
 
@@ -36,13 +36,13 @@ public abstract class MixinMEStorageScreen extends AEBaseScreen {
     protected void MEStorageScreenConstructor(MEStorageMenu menu, Inventory playerInventory, Component title, ScreenStyle style, CallbackInfo ci) {
         final UpgradeInterface upgradeInterface = ((UpgradeInterface) ((MEStorageScreen<?>) (Object) this).getMenu());
 
-        this.ae2importExportCard$upgradeCardButton[0] = new UpgradeItemButton(btn -> upgradeInterface.ae2ImportExportCard$openMenu(UpgradeType.IMPORT),
-                ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/import_card.png"));
+        this.ae2importExportCard$upgradeCardButton[0] = new UpgradeItemButton(_ -> upgradeInterface.ae2ImportExportCard$openMenu(UpgradeType.IMPORT, SlotSemantics.UPGRADE.id()),
+            makeId("textures/gui/import_card.png"));
         this.addToLeftToolbar(this.ae2importExportCard$upgradeCardButton[0]);
         this.ae2importExportCard$upgradeCardButton[0].setMessage(Component.translatable(ModItems.IMPORT_CARD.get().getDescriptionId()));
 
-        this.ae2importExportCard$upgradeCardButton[1] = new UpgradeItemButton(btn -> upgradeInterface.ae2ImportExportCard$openMenu(UpgradeType.EXPORT),
-                ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/export_card.png"));
+        this.ae2importExportCard$upgradeCardButton[1] = new UpgradeItemButton(_ -> upgradeInterface.ae2ImportExportCard$openMenu(UpgradeType.EXPORT, SlotSemantics.UPGRADE.id()),
+            makeId("textures/gui/export_card.png"));
         this.addToLeftToolbar(this.ae2importExportCard$upgradeCardButton[1]);
         this.ae2importExportCard$upgradeCardButton[1].setMessage(Component.translatable(ModItems.EXPORT_CARD.get().getDescriptionId()));
     }
