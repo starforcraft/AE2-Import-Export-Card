@@ -1,4 +1,4 @@
-/*package com.ultramega.ae2importexportcard.compat.appflux;
+package com.ultramega.ae2importexportcard.compat.appflux;
 
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
 
@@ -14,9 +14,12 @@ import appeng.me.helpers.ActionHostEnergySource;
 import appeng.util.ConfigInventory;
 import com.glodblock.github.appflux.common.me.key.FluxKey;
 import com.glodblock.github.appflux.common.me.key.type.EnergyType;
-import dev.technici4n.grandpower.api.ILongEnergyStorage;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 public final class AppFluxEnergyCompat {
     private AppFluxEnergyCompat() {
@@ -36,8 +39,8 @@ public final class AppFluxEnergyCompat {
                                             FuzzyMode fuzzyMode,
                                             boolean fuzzy,
                                             boolean invertFilter) {
-        ILongEnergyStorage energyHandler = getEnergyHandler(itemInInventory);
-        if (energyHandler == null || !energyHandler.canExtract()) {
+        EnergyHandler energyHandler = getEnergyHandler(player, itemInInventory, inventorySlot);
+        if (energyHandler == null) {
             return;
         }
 
@@ -46,12 +49,20 @@ public final class AppFluxEnergyCompat {
             return;
         }
 
-        long stored = energyHandler.getAmount();
+        long stored = energyHandler.getAmountAsLong();
         if (stored <= 0) {
             return;
         }
 
-        long simulatedExtract = energyHandler.extract(stored, true);
+        int storedInt = toIntAmount(stored);
+        if (storedInt <= 0) {
+            return;
+        }
+
+        long simulatedExtract;
+        try (Transaction tx = Transaction.openRoot()) {
+            simulatedExtract = energyHandler.extract(storedInt, tx);
+        }
         if (simulatedExtract <= 0) {
             return;
         }
@@ -61,22 +72,33 @@ public final class AppFluxEnergyCompat {
             return;
         }
 
-        long actuallyExtracted = energyHandler.extract(insertable, false);
-        if (actuallyExtracted <= 0) {
+        int amountToMove = toIntAmount(Math.min(simulatedExtract, insertable));
+        if (amountToMove <= 0) {
             return;
         }
 
-        long inserted = StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), energyKey, actuallyExtracted, source, Actionable.MODULATE);
-        if (inserted < actuallyExtracted) {
-            long remainder = actuallyExtracted - inserted;
-
-            if (remainder > 0 && energyHandler.canReceive()) {
-                energyHandler.receive(remainder, false);
+        try (Transaction tx = Transaction.openRoot()) {
+            long extracted = energyHandler.extract(amountToMove, tx);
+            if (extracted <= 0) {
+                return;
             }
-        }
 
-        player.getInventory().setItem(inventorySlot, itemInInventory);
-        player.containerMenu.broadcastChanges();
+            long inserted = StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), energyKey, extracted, source, Actionable.MODULATE);
+            if (inserted <= 0) {
+                return;
+            }
+
+            if (inserted < extracted) {
+                int remainder = (int) (extracted - inserted);
+                int returned = energyHandler.insert(remainder, tx);
+
+                if (returned != remainder) {
+                    return;
+                }
+            }
+
+            tx.commit();
+        }
     }
 
     public static boolean exportEnergyToItem(ServerPlayer player,
@@ -87,7 +109,7 @@ public final class AppFluxEnergyCompat {
                                              ItemStack itemInInventory,
                                              AEKey energyKey,
                                              long amount) {
-        EnergyInsertTarget target = getEnergyInsertTarget(itemInInventory, energyKey, amount);
+        EnergyInsertTarget target = getEnergyInsertTarget(player, inventorySlot, itemInInventory, energyKey, amount);
         if (target == null) {
             return false;
         }
@@ -99,43 +121,58 @@ public final class AppFluxEnergyCompat {
         }
 
         long amountToMove = Math.min(extractable, target.insertableAmount());
+        if (amountToMove <= 0) {
+            return false;
+        }
+
         long extracted = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), target.key(), amountToMove, source, Actionable.MODULATE);
         if (extracted <= 0) {
             return false;
         }
 
-        long inserted = target.handler().receive(extracted, false);
-        if (inserted < extracted) {
-            long notInserted = extracted - inserted;
-            StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), target.key(), notInserted, source, Actionable.MODULATE);
-        }
+        try (Transaction tx = Transaction.openRoot()) {
+            int extractedForItem = Math.toIntExact(extracted);
+            long inserted = target.handler().insert(extractedForItem, tx);
+            if (inserted <= 0) {
+                StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), target.key(), extracted, source, Actionable.MODULATE);
+                return false;
+            }
 
-        if (inserted <= 0) {
-            return false;
-        }
+            if (inserted < extracted) {
+                long notInserted = extracted - inserted;
+                StorageHelper.poweredInsert(energySource, grid.getStorageService().getInventory(), target.key(), notInserted, source, Actionable.MODULATE);
+            }
 
-        player.getInventory().setItem(inventorySlot, itemInInventory);
-        player.containerMenu.broadcastChanges();
+            tx.commit();
+        }
 
         return true;
     }
 
-    public static boolean canAcceptEnergy(ItemStack itemStack, AEKey chemicalKey, long amount) {
-        return getEnergyInsertTarget(itemStack, chemicalKey, amount) != null;
+    public static boolean canAcceptEnergy(ServerPlayer player, int inventorySlot, ItemStack stack, AEKey chemicalKey, long amount) {
+        return getEnergyInsertTarget(player, inventorySlot, stack, chemicalKey, amount) != null;
     }
 
     @Nullable
-    private static EnergyInsertTarget getEnergyInsertTarget(ItemStack itemStack, AEKey energyKey, long amount) {
-        if (!(energyKey instanceof FluxKey fluxKey)) {
+    private static EnergyInsertTarget getEnergyInsertTarget(ServerPlayer player, int inventorySlot, ItemStack stack, AEKey energyKey, long amount) {
+        if (!(energyKey instanceof FluxKey fluxKey) || amount <= 0) {
             return null;
         }
 
-        ILongEnergyStorage energyHandler = getEnergyHandler(itemStack);
-        if (energyHandler == null || !energyHandler.canReceive() || amount <= 0) {
+        int amountInt = toIntAmount(amount);
+        if (amountInt <= 0) {
             return null;
         }
 
-        long insertableAmount = energyHandler.receive(amount, true);
+        EnergyHandler energyHandler = getEnergyHandler(player, stack, inventorySlot);
+        if (energyHandler == null) {
+            return null;
+        }
+
+        long insertableAmount;
+        try (Transaction tx = Transaction.openRoot()) {
+            insertableAmount = energyHandler.insert(amountInt, tx);
+        }
         if (insertableAmount <= 0) {
             return null;
         }
@@ -144,15 +181,21 @@ public final class AppFluxEnergyCompat {
     }
 
     @Nullable
-    private static ILongEnergyStorage getEnergyHandler(ItemStack itemStack) {
-        if (itemStack.isEmpty()) {
+    private static EnergyHandler getEnergyHandler(ServerPlayer player, ItemStack stack, int inventorySlot) {
+        if (stack.isEmpty()) {
             return null;
         }
 
-        return itemStack.getCapability(ILongEnergyStorage.ITEM);
+        return stack.getCapability(Capabilities.Energy.ITEM, ItemAccess.forPlayerSlot(player, inventorySlot));
     }
 
-    private record EnergyInsertTarget(FluxKey key, ILongEnergyStorage handler, long insertableAmount) {
+    private static int toIntAmount(long amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+        return amount > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) amount;
+    }
+
+    private record EnergyInsertTarget(FluxKey key, EnergyHandler handler, long insertableAmount) {
     }
 }
-*/

@@ -1,4 +1,4 @@
-/*package com.ultramega.ae2importexportcard.compat.appflux;
+package com.ultramega.ae2importexportcard.compat.appflux;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 
@@ -48,13 +48,13 @@ public final class AppFluxBridge {
         }
     }
 
-    public static boolean canAcceptEnergy(ItemStack itemStack, AEKey chemicalKey, long amount) {
+    public static boolean canAcceptEnergy(ServerPlayer player, int inventorySlot, ItemStack stack, AEKey chemicalKey, long amount) {
         if (!AE2ImportExportCard.APPFLUX_INSTALLED) {
             return false;
         }
 
         try {
-            return AppFluxEnergyCompat.canAcceptEnergy(itemStack, chemicalKey, amount);
+            return AppFluxEnergyCompat.canAcceptEnergy(player, inventorySlot, stack, chemicalKey, amount);
         } catch (LinkageError ignored) {
             return false;
         }
@@ -79,4 +79,3 @@ public final class AppFluxBridge {
         }
     }
 }
-*/

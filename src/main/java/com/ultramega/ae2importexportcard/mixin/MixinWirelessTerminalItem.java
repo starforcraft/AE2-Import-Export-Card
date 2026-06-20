@@ -1,6 +1,7 @@
 package com.ultramega.ae2importexportcard.mixin;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
+import com.ultramega.ae2importexportcard.compat.appflux.AppFluxBridge;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
@@ -224,10 +225,10 @@ public abstract class MixinWirelessTerminalItem extends Item {
             itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
         /*MekanismBridge.importChemicalFromItem(player, grid, energySource, source, inventorySlot,
-            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
+            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);*/
 
         AppFluxBridge.importEnergyFromItem(player, grid, energySource, source, inventorySlot,
-            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);*/
+            itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
         this.ae2importExportCard$importItem(player, grid, energySource, source, inventorySlot, itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
     }
@@ -374,8 +375,8 @@ public abstract class MixinWirelessTerminalItem extends Item {
         }
 
         if (exportKey instanceof AEItemKey itemKey) {
-            this.ae2importExportCard$exportItemToPlayerSlot(player, level, grid, energySource, source, inventorySlot,
-                itemInInventory, itemKey, filter.what(), itemHandler, upgradeInventory);
+            this.ae2importExportCard$exportItemToPlayerSlot(level, grid, energySource, source, inventorySlot,
+                itemKey, filter.what(), itemHandler, upgradeInventory);
         } else if (exportKey instanceof AEFluidKey fluidKey) {
             this.ae2importExportCard$exportFluidToPlayerSlot(player, grid, energySource, source, inventorySlot,
                 itemInInventory, fluidKey, upgradeInventory);
@@ -393,12 +394,13 @@ public abstract class MixinWirelessTerminalItem extends Item {
             if (!exported) {
                 this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) chemicalAmount, upgradeInventory);
             }
-        } else if (AppFluxBridge.isFluxKey(exportKey)) {
+        }*/
+        else if (AppFluxBridge.isFluxKey(exportKey)) {
             long energyAmount = upgradeInventory.isInstalled(AEItems.SPEED_CARD)
                 ? AEFluidKey.AMOUNT_BUCKET * 64
                 : AEFluidKey.AMOUNT_BUCKET;
 
-            boolean canAcceptEnergy = AppFluxBridge.canAcceptEnergy(itemInInventory, exportKey, energyAmount);
+            boolean canAcceptEnergy = AppFluxBridge.canAcceptEnergy(player, inventorySlot, itemInInventory, exportKey, energyAmount);
             if (!canAcceptEnergy) {
                 return;
             }
@@ -407,7 +409,7 @@ public abstract class MixinWirelessTerminalItem extends Item {
             if (!exported) {
                 this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) energyAmount, upgradeInventory);
             }
-        }*/
+        }
     }
 
     @Unique
@@ -426,13 +428,11 @@ public abstract class MixinWirelessTerminalItem extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$exportItemToPlayerSlot(ServerPlayer player,
-                                                            Level level,
+    private void ae2importExportCard$exportItemToPlayerSlot(Level level,
                                                             IGrid grid,
                                                             ActionHostEnergySource energySource,
                                                             IActionSource source,
                                                             int inventorySlot,
-                                                            ItemStack itemInInventory,
                                                             AEItemKey itemKey,
                                                             AEKey craftingKey,
                                                             ResourceHandler<ItemResource> playerInventory,

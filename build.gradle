@@ -98,9 +98,9 @@ dependencies {
 //    compileOnlyApi "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:api"
 //    runtimeOnly "mekanism:Mekanism:${minecraft_version}-${mekanism_version}:all"
 //    implementation "curse.maven:appmek-574300:${appmek_version}"
-//
-//    implementation "curse.maven:appflux-965012:${appflux_version}"
-//    implementation "curse.maven:glodium-957920:${glodium_version}"
+
+    implementation "curse.maven:appflux-965012:${appflux_version}"
+    implementation "curse.maven:glodium-957920:${glodium_version}"
 }
 
 publishMods {
