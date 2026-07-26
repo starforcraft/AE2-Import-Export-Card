@@ -21,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
 
 public class UpgradeHost implements IConfigurableObject {
     public static final String NBT_SELECTED_INVENTORY_SLOTS = "SelectedInventorySlots";
+    private static final int INVENTORY_SLOT_COUNT = 36;
 
     public final ConfigInventory filterConfig = ConfigInventory.configTypes(18, this::updateFilter);
     private IConfigManager configManager;
@@ -88,6 +89,9 @@ public class UpgradeHost implements IConfigurableObject {
     }
 
     public void setSelectedInventorySlots(int[] selectedInventorySlots) {
+        if (selectedInventorySlots.length != INVENTORY_SLOT_COUNT) {
+            return;
+        }
         ListTag tagList = itemStack.getTag().getList("upgrades", Tag.TAG_COMPOUND);
         for (int i = 0; i < tagList.size(); i++) {
             if (isInsertOrExportCard(type, tagList, i)) {
@@ -111,12 +115,15 @@ public class UpgradeHost implements IConfigurableObject {
                 CompoundTag tag = (CompoundTag) tagList.getCompound(i).get("tag");
 
                 if (tag != null && tag.contains(NBT_SELECTED_INVENTORY_SLOTS)) {
-                    return tag.getIntArray(NBT_SELECTED_INVENTORY_SLOTS);
+                    int[] selectedSlots = tag.getIntArray(NBT_SELECTED_INVENTORY_SLOTS);
+                    return selectedSlots.length == INVENTORY_SLOT_COUNT
+                            ? selectedSlots
+                            : new int[INVENTORY_SLOT_COUNT];
                 }
             }
         }
 
-        return new int[36];
+        return new int[INVENTORY_SLOT_COUNT];
     }
 
     public boolean isInsertOrExportCard(UpgradeType type, ListTag tagList, int index) {

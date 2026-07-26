@@ -31,6 +31,10 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     public static final MenuType<UpgradeContainerMenu> TYPE_EXPORT = MenuTypeBuilder.create((id, inventory, host) -> new UpgradeContainerMenu(UpgradeType.EXPORT, id, inventory, host, new UpgradeHost(UpgradeType.EXPORT, id, inventory, host)), WirelessTerminalMenuHost.class)
             .build(EXPORT_CARD_ID);
 
+    public static void init() {
+        // Invoking this method initializes the class and queues both menu types in AE2.
+    }
+
     private final UpgradeType type;
     private final WirelessTerminalMenuHost host;
     private final UpgradeHost upgradeHost;
@@ -87,6 +91,10 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
 
     public UpgradeHost getUpgradeHost() {
         return upgradeHost;
+    }
+
+    public UpgradeType getUpgradeType() {
+        return type;
     }
 
     @Override

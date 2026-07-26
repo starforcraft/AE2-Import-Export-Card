@@ -17,6 +17,9 @@ public class AE2InsertExportCard {
     public static final String MOD_ID = "ae2insertexportcard";
 
     public static final NetworkHandler NETWORK_HANDLER = new NetworkHandler();
+    private static final java.util.Map<net.minecraft.world.item.ItemStack,
+            java.util.concurrent.Future<appeng.api.networking.crafting.ICraftingPlan>> CRAFTING_JOBS =
+                    java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     public AE2InsertExportCard() {
         DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> ClientEventHandler::new);
@@ -46,11 +49,9 @@ public class AE2InsertExportCard {
     }
 
     public static void tickWireless(net.minecraft.world.item.ItemStack stack, appeng.api.networking.IGrid grid,
-            appeng.helpers.WirelessTerminalMenuHost host, net.minecraft.server.level.ServerPlayer player,
-            java.util.function.Supplier<java.util.concurrent.Future<appeng.api.networking.crafting.ICraftingPlan>> jobGetter,
-            java.util.function.Consumer<java.util.concurrent.Future<appeng.api.networking.crafting.ICraftingPlan>> jobSetter) {
+            appeng.helpers.WirelessTerminalMenuHost host, net.minecraft.server.level.ServerPlayer player) {
 
-        if (stack.getTag().contains("upgrades") && grid != null) {
+        if (stack.hasTag() && stack.getTag().contains("upgrades") && grid != null && host != null) {
             net.minecraft.nbt.ListTag tagList = stack.getTag().getList("upgrades", net.minecraft.nbt.Tag.TAG_COMPOUND);
 
             for (int i = 0; i < tagList.size(); i++) {
@@ -69,6 +70,9 @@ public class AE2InsertExportCard {
                 net.minecraft.nbt.CompoundTag tag = (net.minecraft.nbt.CompoundTag) tagList.getCompound(i).get("tag");
 
                 if (tag != null && (isInsertUpgrade || isExportUpgrade)) {
+                    if (slot < 0 || slot >= host.getUpgrades().size()) {
+                        continue;
+                    }
                     net.minecraft.world.item.ItemStack upgrade = host.getUpgrades().getStackInSlot(slot);
                     int[] selectedInventorySlots = tag.getIntArray(
                             com.ultramega.ae2insertexportcard.item.UpgradeHost.NBT_SELECTED_INVENTORY_SLOTS);
@@ -84,7 +88,9 @@ public class AE2InsertExportCard {
                         fuzzyMode = appeng.api.config.FuzzyMode.IGNORE_ALL;
                     }
 
-                    for (int j = 0; j < selectedInventorySlots.length; j++) {
+                    int inventorySlotCount = Math.min(selectedInventorySlots.length,
+                            player.getInventory().items.size());
+                    for (int j = 0; j < inventorySlotCount; j++) {
                         if (selectedInventorySlots[j] >= 1) {
                             net.minecraft.world.item.ItemStack itemInInventory = player.getInventory().getItem(j);
 
@@ -104,59 +110,76 @@ public class AE2InsertExportCard {
 
                                 if (isInsertUpgrade) {
                                     appeng.api.stacks.AEKey what = appeng.api.stacks.AEItemKey.of(itemInInventory);
-                                    if (what != null && grid.getStorageService() != null) {
+                                    if (grid.getStorageService() != null) {
+                                        boolean fuzzyInstalled = upgrades
+                                                .isInstalled(appeng.core.definitions.AEItems.FUZZY_CARD);
+                                        var energySource = new appeng.me.helpers.ChannelPowerSrc(node,
+                                                grid.getEnergyService());
+
+                                        if (com.ultramega.ae2insertexportcard.compat.AddonStorageBridge
+                                                .importFromItem(player, grid, energySource, source, j,
+                                                        itemInInventory, filterConfig, fuzzyMode, fuzzyInstalled,
+                                                        invertFilter)) {
+                                            continue;
+                                        }
+
                                         // Import Fluids
-                                        for (int index = 0; index < filterConfig.size(); index++) {
-                                            appeng.api.stacks.GenericStack filter = filterConfig.getStack(index);
-                                            if (filter != null
-                                                    && filter.what() instanceof appeng.api.stacks.AEFluidKey) {
-                                                itemInInventory.getCapability(
-                                                        net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM)
-                                                        .ifPresent((fluidItem -> {
-                                                            net.minecraftforge.fluids.FluidStack fluidStack = fluidItem
-                                                                    .drain(Integer.MAX_VALUE,
-                                                                            net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
-                                                            if (fluidStack.isEmpty())
-                                                                return;
-
-                                                            appeng.api.stacks.AEFluidKey aeFluidKey = appeng.api.stacks.AEFluidKey
-                                                                    .of(fluidStack);
-                                                            if (aeFluidKey == null)
-                                                                return;
-
-                                                            long amount = appeng.api.storage.StorageHelper
-                                                                    .poweredInsert(
-                                                                            new appeng.me.helpers.ChannelPowerSrc(node,
-                                                                                    grid.getEnergyService()),
-                                                                            grid.getStorageService().getInventory(),
-                                                                            aeFluidKey,
-                                                                            fluidStack.getAmount(), source,
-                                                                            appeng.api.config.Actionable.SIMULATE);
-                                                            if (amount <= 0)
-                                                                return;
-
-                                                            fluidItem.drain((int) amount,
-                                                                    net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
-                                                            appeng.api.storage.StorageHelper.poweredInsert(
-                                                                    new appeng.me.helpers.ChannelPowerSrc(node,
-                                                                            grid.getEnergyService()),
-                                                                    grid.getStorageService().getInventory(), aeFluidKey,
-                                                                    amount, source,
-                                                                    appeng.api.config.Actionable.MODULATE);
-                                                            player.containerMenu.broadcastChanges();
-                                                        }));
+                                        boolean importedFluid = false;
+                                        var fluidCapability = itemInInventory.getCapability(
+                                                net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM)
+                                                .resolve();
+                                        if (fluidCapability.isPresent()) {
+                                            var fluidItem = fluidCapability.get();
+                                            net.minecraftforge.fluids.FluidStack fluidStack = fluidItem.drain(
+                                                    Integer.MAX_VALUE,
+                                                    net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+                                            appeng.api.stacks.AEFluidKey fluidKey = fluidStack.isEmpty()
+                                                    ? null
+                                                    : appeng.api.stacks.AEFluidKey.of(fluidStack);
+                                            if (fluidKey != null
+                                                    && invertFilter != filterMatches(filterConfig, fluidKey, fuzzyMode,
+                                                            fuzzyInstalled)) {
+                                                long accepted = appeng.api.storage.StorageHelper.poweredInsert(
+                                                        new appeng.me.helpers.ChannelPowerSrc(node,
+                                                                grid.getEnergyService()),
+                                                        grid.getStorageService().getInventory(), fluidKey,
+                                                        fluidStack.getAmount(), source,
+                                                        appeng.api.config.Actionable.SIMULATE);
+                                                if (accepted > 0) {
+                                                    net.minecraftforge.fluids.FluidStack drained = fluidItem.drain(
+                                                            (int) Math.min(accepted, Integer.MAX_VALUE),
+                                                            net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                                                    if (drained.isEmpty()) {
+                                                        continue;
+                                                    }
+                                                    long inserted = appeng.api.storage.StorageHelper.poweredInsert(
+                                                            new appeng.me.helpers.ChannelPowerSrc(node,
+                                                                    grid.getEnergyService()),
+                                                            grid.getStorageService().getInventory(), fluidKey,
+                                                            drained.getAmount(), source,
+                                                            appeng.api.config.Actionable.MODULATE);
+                                                    if (inserted < drained.getAmount()) {
+                                                        net.minecraftforge.fluids.FluidStack rollback = drained.copy();
+                                                        rollback.setAmount((int) (drained.getAmount() - inserted));
+                                                        fluidItem.fill(rollback,
+                                                                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                                                    }
+                                                    if (inserted > 0) {
+                                                        player.getInventory().setItem(j, fluidItem.getContainer());
+                                                        player.containerMenu.broadcastChanges();
+                                                        importedFluid = true;
+                                                    }
+                                                }
                                             }
+                                        }
+                                        if (importedFluid) {
+                                            continue;
                                         }
 
                                         // Import Items
-                                        final appeng.api.config.FuzzyMode finalFuzzyMode = fuzzyMode;
-                                        if (invertFilter != filterConfig.getAvailableStacks().findFuzzy(what, fuzzyMode)
-                                                .stream()
-                                                .anyMatch(filterKeyEntry -> upgrades
-                                                        .isInstalled(appeng.core.definitions.AEItems.FUZZY_CARD)
-                                                                ? what.fuzzyEquals(filterKeyEntry.getKey(),
-                                                                        finalFuzzyMode)
-                                                                : what.equals(filterKeyEntry.getKey()))) {
+                                        if (what != null
+                                                && invertFilter != filterMatches(filterConfig, what, fuzzyMode,
+                                                        fuzzyInstalled)) {
                                             long amount = appeng.api.storage.StorageHelper.poweredInsert(
                                                     new appeng.me.helpers.ChannelPowerSrc(node,
                                                             grid.getEnergyService()),
@@ -166,14 +189,17 @@ public class AE2InsertExportCard {
                                             if (amount <= 0)
                                                 continue;
 
-                                            appeng.api.storage.StorageHelper.poweredInsert(
+                                            long inserted = appeng.api.storage.StorageHelper.poweredInsert(
                                                     new appeng.me.helpers.ChannelPowerSrc(node,
                                                             grid.getEnergyService()),
                                                     grid.getStorageService().getInventory(), what,
-                                                    itemInInventory.getCount(), source,
+                                                    amount, source,
                                                     appeng.api.config.Actionable.MODULATE);
-                                            player.getInventory().setItem(j, net.minecraft.world.item.ItemStack.EMPTY);
-                                            player.containerMenu.broadcastChanges();
+                                            if (inserted > 0) {
+                                                itemInInventory.shrink((int) Math.min(inserted,
+                                                        itemInInventory.getCount()));
+                                                player.containerMenu.broadcastChanges();
+                                            }
                                         }
                                     }
                                 } else {
@@ -184,6 +210,32 @@ public class AE2InsertExportCard {
                                         if (index != selectedInventorySlots[j] - 1)
                                             continue;
 
+                                        appeng.api.stacks.AEKey addonExportKey;
+                                        if (upgrades.isInstalled(appeng.core.definitions.AEItems.FUZZY_CARD)) {
+                                            var fuzzy = grid.getStorageService().getCachedInventory()
+                                                    .findFuzzy(filter.what(), fuzzyMode)
+                                                    .stream().findFirst();
+                                            addonExportKey = fuzzy.map(java.util.Map.Entry::getKey).orElse(null);
+                                        } else {
+                                            addonExportKey = filter.what();
+                                        }
+
+                                        if (addonExportKey != null
+                                                && com.ultramega.ae2insertexportcard.compat.AddonStorageBridge
+                                                        .isSupportedKey(addonExportKey)) {
+                                            long operationAmount = addonExportKey.getType().getAmountPerOperation();
+                                            long requestedAmount = upgrades
+                                                    .isInstalled(appeng.core.definitions.AEItems.SPEED_CARD)
+                                                            ? operationAmount * 64L
+                                                            : operationAmount;
+                                            com.ultramega.ae2insertexportcard.compat.AddonStorageBridge.exportToItem(
+                                                    player, grid,
+                                                    new appeng.me.helpers.ChannelPowerSrc(node,
+                                                            grid.getEnergyService()),
+                                                    source, j, itemInInventory, addonExportKey, requestedAmount);
+                                            continue;
+                                        }
+
                                         java.util.Optional<net.minecraftforge.items.IItemHandler> playerInventory = player
                                                 .getCapability(
                                                         net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER,
@@ -192,20 +244,18 @@ public class AE2InsertExportCard {
                                         if (playerInventory.isPresent()) {
                                             appeng.api.stacks.AEItemKey what = appeng.api.stacks.AEItemKey
                                                     .of(itemInInventory.getItem());
-                                            boolean acceptsFluid = false;
-
-                                            var cap = itemInInventory
+                                            var fluidCapability = itemInInventory
                                                     .getCapability(
                                                             net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM)
-                                                    .cast();
-                                            if (cap.isPresent()) {
-                                                acceptsFluid = true;
-                                            }
+                                                    .resolve();
+                                            boolean acceptsFluid = fluidCapability.isPresent();
 
                                             if (acceptsFluid || itemInInventory.isEmpty()
-                                                    || (upgrades.isInstalled(appeng.core.definitions.AEItems.FUZZY_CARD)
-                                                            ? what.fuzzyEquals(filter.what(), fuzzyMode)
-                                                            : what.equals(filter.what()))) {
+                                                    || (what != null
+                                                            && (upgrades.isInstalled(
+                                                                    appeng.core.definitions.AEItems.FUZZY_CARD)
+                                                                            ? what.fuzzyEquals(filter.what(), fuzzyMode)
+                                                                            : what.equals(filter.what())))) {
                                                 appeng.api.stacks.AEKey toExportKey;
                                                 if (upgrades.isInstalled(appeng.core.definitions.AEItems.FUZZY_CARD)) {
                                                     var fuzzy = grid.getStorageService().getCachedInventory()
@@ -238,7 +288,7 @@ public class AE2InsertExportCard {
                                                                         grid.getStorageService().getInventory(),
                                                                         toExportKey,
                                                                         size, source,
-                                                                        appeng.api.config.Actionable.MODULATE);
+                                                                        appeng.api.config.Actionable.SIMULATE);
                                                         if (extracted <= 0) {
                                                             if (upgrades.isInstalled(
                                                                     appeng.core.definitions.AEItems.CRAFTING_CARD)) {
@@ -249,43 +299,70 @@ public class AE2InsertExportCard {
                                                                     var src = new appeng.me.helpers.MachineSource(
                                                                             grid::getPivot);
 
-                                                                    java.util.concurrent.Future<appeng.api.networking.crafting.ICraftingPlan> ae2insertExportCard$craftingJob = jobGetter
-                                                                            .get();
-
-                                                                    if (ae2insertExportCard$craftingJob != null) {
+                                                                    var craftingJob = CRAFTING_JOBS.get(stack);
+                                                                    if (craftingJob == null) {
+                                                                        CRAFTING_JOBS.put(stack, craftingService
+                                                                                .beginCraftingCalculation(
+                                                                                        player.getLevel(), () -> src,
+                                                                                        filter.what(), size,
+                                                                                        appeng.api.networking.crafting.CalculationStrategy.CRAFT_LESS));
+                                                                    } else if (craftingJob.isDone()) {
                                                                         try {
-                                                                            appeng.api.networking.crafting.ICraftingPlan job = null;
-                                                                            if (ae2insertExportCard$craftingJob
-                                                                                    .isDone()) {
-                                                                                job = ae2insertExportCard$craftingJob
-                                                                                        .get();
-                                                                            }
-
-                                                                            // Check if job is complete
+                                                                            var job = craftingJob.get();
                                                                             if (job != null) {
                                                                                 craftingService.submitJob(job, null,
                                                                                         null, false, src);
-
-                                                                                jobSetter.accept(null);
                                                                             }
-                                                                        } catch (InterruptedException
-                                                                                | java.util.concurrent.ExecutionException ignored) {
+                                                                        } catch (InterruptedException e) {
+                                                                            Thread.currentThread().interrupt();
+                                                                        } catch (java.util.concurrent.ExecutionException
+                                                                                | java.util.concurrent.CancellationException ignored) {
+                                                                        } finally {
+                                                                            CRAFTING_JOBS.remove(stack);
                                                                         }
                                                                     }
-
-                                                                    jobSetter.accept(craftingService
-                                                                            .beginCraftingCalculation(player.getLevel(),
-                                                                                    () -> src,
-                                                                                    filter.what(), size,
-                                                                                    appeng.api.networking.crafting.CalculationStrategy.CRAFT_LESS));
                                                                 }
                                                             }
 
                                                             continue;
                                                         }
 
-                                                        playerInventory.get().insertItem(j,
-                                                                fuzzyItem.toStack((int) extracted), false);
+                                                        net.minecraft.world.item.ItemStack candidate = fuzzyItem
+                                                                .toStack((int) extracted);
+                                                        net.minecraft.world.item.ItemStack simulatedRemainder = playerInventory
+                                                                .get().insertItem(j, candidate, true);
+                                                        int accepted = candidate.getCount()
+                                                                - simulatedRemainder.getCount();
+                                                        if (accepted <= 0) {
+                                                            continue;
+                                                        }
+
+                                                        long actuallyExtracted = appeng.api.storage.StorageHelper
+                                                                .poweredExtraction(
+                                                                        new appeng.me.helpers.ChannelPowerSrc(node,
+                                                                                grid.getEnergyService()),
+                                                                        grid.getStorageService().getInventory(),
+                                                                        toExportKey, accepted, source,
+                                                                        appeng.api.config.Actionable.MODULATE);
+                                                        if (actuallyExtracted <= 0) {
+                                                            continue;
+                                                        }
+
+                                                        net.minecraft.world.item.ItemStack remainder = playerInventory
+                                                                .get().insertItem(j,
+                                                                        fuzzyItem.toStack((int) actuallyExtracted),
+                                                                        false);
+                                                        if (!remainder.isEmpty()) {
+                                                            long returned = grid.getStorageService().getInventory()
+                                                                    .insert(toExportKey, remainder.getCount(),
+                                                                            appeng.api.config.Actionable.MODULATE,
+                                                                            source);
+                                                            remainder.shrink((int) returned);
+                                                            if (!remainder.isEmpty()
+                                                                    && !player.getInventory().add(remainder)) {
+                                                                player.drop(remainder, false);
+                                                            }
+                                                        }
                                                         player.containerMenu.broadcastChanges();
                                                     } else if (acceptsFluid
                                                             && toExportKey instanceof appeng.api.stacks.AEFluidKey fuzzyFluid) {
@@ -307,26 +384,36 @@ public class AE2InsertExportCard {
                                                             continue;
                                                         }
 
-                                                        cap.ifPresent((o -> {
-                                                            if (o instanceof net.minecraftforge.fluids.capability.IFluidHandlerItem fluidItem) {
-                                                                int amount = fluidItem.fill(
-                                                                        fuzzyFluid.toStack((int) extracted),
-                                                                        net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
-                                                                if (amount <= 0) {
-                                                                    return;
-                                                                }
+                                                        var fluidItem = fluidCapability.get();
+                                                        int amount = fluidItem.fill(
+                                                                fuzzyFluid.toStack((int) extracted),
+                                                                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+                                                        if (amount <= 0) {
+                                                            continue;
+                                                        }
 
-                                                                appeng.api.storage.StorageHelper.poweredExtraction(
+                                                        long actuallyExtracted = appeng.api.storage.StorageHelper
+                                                                .poweredExtraction(
                                                                         new appeng.me.helpers.ChannelPowerSrc(node,
                                                                                 grid.getEnergyService()),
                                                                         grid.getStorageService().getInventory(),
                                                                         toExportKey, amount, source,
                                                                         appeng.api.config.Actionable.MODULATE);
-                                                                fluidItem.fill(fuzzyFluid.toStack(amount),
-                                                                        net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
-                                                                player.containerMenu.broadcastChanges();
-                                                            }
-                                                        }));
+                                                        if (actuallyExtracted <= 0) {
+                                                            continue;
+                                                        }
+
+                                                        int filled = fluidItem.fill(
+                                                                fuzzyFluid.toStack((int) actuallyExtracted),
+                                                                net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                                                        if (filled < actuallyExtracted) {
+                                                            grid.getStorageService().getInventory().insert(toExportKey,
+                                                                    actuallyExtracted - filled,
+                                                                    appeng.api.config.Actionable.MODULATE, source);
+                                                        }
+                                                        player.getInventory().setItem(j,
+                                                                fluidItem.getContainer());
+                                                        player.containerMenu.broadcastChanges();
                                                     }
                                                 }
                                             }
@@ -339,5 +426,13 @@ public class AE2InsertExportCard {
                 }
             }
         }
+    }
+
+    private static boolean filterMatches(appeng.util.ConfigInventory filterConfig, appeng.api.stacks.AEKey key,
+            appeng.api.config.FuzzyMode fuzzyMode, boolean fuzzyInstalled) {
+        return filterConfig.getAvailableStacks().findFuzzy(key, fuzzyMode).stream()
+                .anyMatch(entry -> fuzzyInstalled
+                        ? key.fuzzyEquals(entry.getKey(), fuzzyMode)
+                        : key.equals(entry.getKey()));
     }
 }

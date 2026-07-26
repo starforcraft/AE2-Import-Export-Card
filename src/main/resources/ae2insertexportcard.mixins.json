@@ -1,6 +1,7 @@
 {
   "required": true,
   "package": "com.ultramega.ae2insertexportcard.mixin",
+  "plugin": "com.ultramega.ae2insertexportcard.mixin.MixinConfigPlugin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "MixinMEStorageMenu",

@@ -28,9 +28,11 @@ public class LockSlotUpdateMessage {
 
     public static void handle(LockSlotUpdateMessage message, Supplier<NetworkEvent.Context> ctx) {
         Player player = ctx.get().getSender();
-        if (player != null && player.containerMenu instanceof UpgradeContainerMenu) {
+        if (player != null) {
             ctx.get().enqueueWork(() -> {
-                if(player.containerMenu.slots.get(message.slotId) instanceof CardPlayerSlot playerSlot) {
+                if (player.containerMenu instanceof UpgradeContainerMenu
+                        && message.slotId >= 0 && message.slotId < player.containerMenu.slots.size()
+                        && player.containerMenu.slots.get(message.slotId) instanceof CardPlayerSlot playerSlot) {
                     playerSlot.setCancelPickup(message.cancelPickup);
                 }
             });
