@@ -77,6 +77,8 @@ public final class AE2ImportExportCard {
         APPFLUX_INSTALLED = ModList.get().isLoaded("appflux");
         MEKANISM_INSTALLED = ModList.get().isLoaded("mekanism");
 
+        Upgrades.add(AEItems.CAPACITY_CARD, ModItems.IMPORT_CARD.get(), 3);
+        Upgrades.add(AEItems.CAPACITY_CARD, ModItems.EXPORT_CARD.get(), 3);
         Upgrades.add(AEItems.FUZZY_CARD, ModItems.IMPORT_CARD.get(), 1);
         Upgrades.add(AEItems.FUZZY_CARD, ModItems.EXPORT_CARD.get(), 1);
         Upgrades.add(AEItems.INVERTER_CARD, ModItems.IMPORT_CARD.get(), 1);

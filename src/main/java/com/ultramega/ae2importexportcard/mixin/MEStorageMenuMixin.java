@@ -19,14 +19,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MEStorageMenu.class)
-public abstract class MixinMEStorageMenu extends AEBaseMenu implements UpgradeInterface {
+public abstract class MEStorageMenuMixin extends AEBaseMenu implements UpgradeInterface {
     @Unique
     private static final ClientActionKey<String> IMPORT_MENU = new ClientActionKey<>("ImportMenu");
-
     @Unique
     private static final ClientActionKey<String> EXPORT_MENU = new ClientActionKey<>("ExportMenu");
 
-    public MixinMEStorageMenu(MenuType<?> menuType, int id, Inventory playerInventory, Object host) {
+    public MEStorageMenuMixin(MenuType<?> menuType, int id, Inventory playerInventory, Object host) {
         super(menuType, id, playerInventory, host);
     }
 

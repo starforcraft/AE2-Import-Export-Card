@@ -2,6 +2,8 @@ package com.ultramega.ae2importexportcard.screen;
 
 import com.ultramega.ae2importexportcard.container.CardPlayerSlot;
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
+import com.ultramega.ae2importexportcard.item.UpgradeHost;
+import com.ultramega.ae2importexportcard.mixin.AbstractContainerScreenAccessor;
 import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
 
@@ -15,6 +17,7 @@ import appeng.api.upgrades.Upgrades;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.implementations.AESubScreen;
 import appeng.client.gui.style.ScreenStyle;
+import appeng.client.gui.style.Blitter;
 import appeng.client.gui.widgets.ServerSettingToggleButton;
 import appeng.client.gui.widgets.SettingToggleButton;
 import appeng.client.gui.widgets.UpgradesPanel;
@@ -22,6 +25,7 @@ import appeng.core.definitions.AEItems;
 import appeng.core.localization.GuiText;
 import appeng.menu.SlotSemantics;
 import appeng.menu.slot.FakeSlot;
+import appeng.menu.slot.OptionalFakeSlot;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -45,10 +49,17 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private static final Identifier CHECKMARK = makeId("textures/gui/checkmark.png");
     private static final Identifier XMARK = makeId("textures/gui/xmark.png");
     private static final Identifier MASS_SELECT = makeId("textures/gui/mass_select.png");
+    private static final Background[] BACKGROUNDS = {
+        new Background(163, makeId("textures/gui/upgrade_0.png")),
+        new Background(181, makeId("textures/gui/upgrade_1.png")),
+        new Background(199, makeId("textures/gui/upgrade_2.png")),
+        new Background(217, makeId("textures/gui/upgrade_3.png"))
+    };
 
     private final UpgradeType type;
     private final SettingToggleButton<FuzzyMode> fuzzyMode;
     private final int[] selectedInventorySlots;
+    private int displayedCapacityCardCount;
 
     private boolean cancel = false;
     private boolean dragging = false;
@@ -57,7 +68,11 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private boolean blockedQuickCraftDrag = false;
     private int clickedSlotId = -1;
 
-    public UpgradeScreen(UpgradeType type, UpgradeContainerMenu containerMenu, Inventory playerInventory, Component title, ScreenStyle style) {
+    public UpgradeScreen(final UpgradeType type,
+                         final UpgradeContainerMenu containerMenu,
+                         final Inventory playerInventory,
+                         final Component title,
+                         final ScreenStyle style) {
         super(containerMenu, playerInventory, title, style);
         this.type = type;
         this.selectedInventorySlots = containerMenu.getUpgradeHost().getSelectedInventorySlots();
@@ -67,14 +82,54 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
         this.fuzzyMode = new ServerSettingToggleButton<>(Settings.FUZZY_MODE, FuzzyMode.IGNORE_ALL);
         this.addToLeftToolbar(this.fuzzyMode);
+
+        this.displayedCapacityCardCount = this.getCapacityCardCount();
+        this.updateImageHeight(this.displayedCapacityCardCount);
+    }
+
+    private int getCapacityCardCount() {
+        return Math.min(UpgradeHost.MAX_CAPACITY_CARD_COUNT,
+            this.menu.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD));
+    }
+
+    private int getMassSelectY() {
+        return 76 + this.displayedCapacityCardCount * 18;
+    }
+
+    private void updateCapacityLayout() {
+        int capacityCardCount = this.getCapacityCardCount();
+        if (capacityCardCount == this.displayedCapacityCardCount) {
+            return;
+        }
+
+        this.displayedCapacityCardCount = capacityCardCount;
+        this.updateImageHeight(capacityCardCount);
+        this.rebuildWidgets();
+        this.menu.updateArmorSlotPositions(capacityCardCount);
+    }
+
+    private void updateImageHeight(final int index) {
+        ((AbstractContainerScreenAccessor) this).setImageHeight(BACKGROUNDS[index].height);
+        ((AbstractContainerScreenAccessor) this).setTopPos((this.height - this.imageHeight) / 2);
     }
 
     @Override
     protected void updateBeforeRender() {
         super.updateBeforeRender();
+        this.updateCapacityLayout();
 
         this.fuzzyMode.set(this.menu.getFuzzyMode());
         this.fuzzyMode.setVisibility(this.menu.hasUpgrade(AEItems.FUZZY_CARD));
+    }
+
+    @Override
+    public void drawBG(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        graphics.nextStratum();
+        Background background = BACKGROUNDS[this.displayedCapacityCardCount];
+        Blitter.texture(background.texture)
+            .src(0, 0, 191, background.height)
+            .dest(offsetX, offsetY)
+            .blit(graphics);
     }
 
     @Override
@@ -86,9 +141,12 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
             final int x = this.leftPos + slot.x;
             final int y = this.topPos + slot.y;
 
+            if (slot instanceof OptionalFakeSlot optionalFakeSlot && !optionalFakeSlot.isSlotEnabled()) {
+                continue;
+            }
             if (slot instanceof FakeSlot) {
                 if (this.type != UpgradeType.IMPORT) {
-                    drawSlotHighlight(graphics, this.type, this.font, x, y, true, i - 3 + 1);
+                    drawSlotHighlight(graphics, this.type, this.font, x, y, true, slot.getContainerSlot() + 1);
                 }
                 continue;
             }
@@ -110,7 +168,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
             }
         }
 
-        drawMassSelect(graphics, this.leftPos + 23 + (16 * 10), this.topPos + 76);
+        drawMassSelect(graphics, this.leftPos + 23 + (16 * 10), this.topPos + this.getMassSelectY());
     }
 
     public static void drawSlotHighlight(GuiGraphicsExtractor graphics, UpgradeType type, Font font, int x, int y, boolean checked, int filterIndex) {
@@ -239,8 +297,8 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
         }
 
         // Check mass select buttons
-        boolean clickedInv = this.isHovering(24 + (16 * 10), 77, 4, 5, event.x(), event.y());
-        boolean clickedHotbar = this.isHovering(24 + (16 * 10), 77 + (16 * 3) + 10, 4, 5, event.x(), event.y());
+        boolean clickedInv = this.isHovering(24 + (16 * 10), this.getMassSelectY() + 1, 4, 5, event.x(), event.y());
+        boolean clickedHotbar = this.isHovering(24 + (16 * 10), this.getMassSelectY() + 1 + (16 * 3) + 10, 4, 5, event.x(), event.y());
 
         if (clickedInv || clickedHotbar) {
             int start = clickedHotbar ? 0 : 9;
@@ -265,7 +323,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
     private void increaseSelectedInventorySlot(UpgradeType type, int index) {
         if (type == UpgradeType.EXPORT) {
-            if (this.selectedInventorySlots[index] >= 18) {
+            if (this.selectedInventorySlots[index] >= this.menu.getUpgradeHost().getActiveFilterSlotCount()) {
                 this.selectedInventorySlots[index] = 0;
             } else {
                 this.selectedInventorySlots[index] += 1;
@@ -298,4 +356,6 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private ItemStack getCarriedOrDragged() {
         return this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
     }
+
+    private record Background(int height, Identifier texture) {}
 }

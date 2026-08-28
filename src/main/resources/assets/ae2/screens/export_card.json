@@ -3,7 +3,7 @@
   "includes": ["common/common.json", "common/player_inventory.json"],
   "helpTopic": "ae2importexportcard-index.md",
   "background": {
-    "texture": "ae2importexportcard:textures/gui/upgrade.png",
+    "texture": "ae2importexportcard:textures/gui/upgrade_0.png",
     "srcRect": [0, 0, 191, 163]
   },
   "slots": {

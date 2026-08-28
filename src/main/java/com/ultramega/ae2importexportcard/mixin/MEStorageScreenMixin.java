@@ -23,12 +23,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import static com.ultramega.ae2importexportcard.AE2ImportExportCard.makeId;
 
 @Mixin(MEStorageScreen.class)
-public abstract class MixinMEStorageScreen<C extends MEStorageMenu> extends AEBaseScreen<C> {
+public abstract class MEStorageScreenMixin<C extends MEStorageMenu> extends AEBaseScreen<C> {
     @Unique
     @Final
     private final UpgradeItemButton[] ae2importExportCard$upgradeCardButton = new UpgradeItemButton[2];
 
-    public MixinMEStorageScreen(final C menu, final Inventory playerInventory, final Component title, final ScreenStyle style) {
+    public MEStorageScreenMixin(final C menu, final Inventory playerInventory, final Component title, final ScreenStyle style) {
         super(menu, playerInventory, title, style);
     }
 
