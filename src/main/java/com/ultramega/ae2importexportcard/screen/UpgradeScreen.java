@@ -47,10 +47,10 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private static final ResourceLocation XMARK = ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/xmark.png");
     private static final ResourceLocation MASS_SELECT = ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/mass_select.png");
     private static final Background[] BACKGROUNDS = {
-        new Background(163, makeId("textures/gui/upgrade_0.png")),
-        new Background(181, makeId("textures/gui/upgrade_1.png")),
-        new Background(199, makeId("textures/gui/upgrade_2.png")),
-        new Background(217, makeId("textures/gui/upgrade_3.png"))
+        new Background(163, ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/upgrade_0.png")),
+        new Background(181, ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/upgrade_1.png")),
+        new Background(199, ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/upgrade_2.png")),
+        new Background(217, ResourceLocation.fromNamespaceAndPath(AE2ImportExportCard.MODID, "textures/gui/upgrade_3.png"))
     };
 
     private final UpgradeType type;
@@ -63,6 +63,8 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     private boolean cancel = false;
     private boolean dragging = false;
     private boolean pickedUpDraggedStack = false;
+    private boolean suppressReleaseAfterDrag = false;
+    private boolean blockedQuickCraftDrag = false;
     private int clickedSlotId = -1;
 
     public UpgradeScreen(final UpgradeType type,
@@ -120,8 +122,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     }
 
     @Override
-    public void drawBG(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-        graphics.nextStratum();
+    public void drawBG(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         Background background = BACKGROUNDS[this.displayedCapacityCardCount];
         Blitter.texture(background.texture)
             .src(0, 0, 191, background.height)
@@ -141,7 +142,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
             }
             if (slot instanceof FakeSlot) {
                 if (this.type != UpgradeType.IMPORT) {
-                    renderSlotHighlight(graphics, this.type, this.font, slot.x, slot.y, true, i - 3 + 1);
+                    renderSlotHighlight(graphics, this.type, this.font, slot.x, slot.y, true, slot.getContainerSlot() + 1);
                 }
                 continue;
             }
@@ -226,11 +227,22 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         this.dragging = true;
+
+        ItemStack carried = this.draggingItem;
+        if (!carried.isEmpty()) {
+            this.clearDraggingState();
+            this.blockedQuickCraftDrag = true;
+            this.suppressReleaseAfterDrag = true;
+            return true;
+        }
+
         if (this.clickedSlotId != -1 && !this.pickedUpDraggedStack) {
-            ItemStack carried = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
             if (carried.isEmpty()) {
                 this.slotClicked(this.menu.slots.get(this.clickedSlotId), this.clickedSlotId, button, ClickType.PICKUP);
                 this.pickedUpDraggedStack = true;
+                this.suppressReleaseAfterDrag = true;
+                this.clearDraggingState();
+                return true;
             }
         }
 
@@ -242,8 +254,9 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
         boolean handled = false;
 
         Slot slot = this.findSlot(mouseX, mouseY);
-        if (!this.cancel && !this.dragging && slot instanceof CardPlayerSlot && slot.index == this.clickedSlotId) {
-            ItemStack carried = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
+        ItemStack carried = this.draggingItem;
+        boolean suppressThisRelease = this.suppressReleaseAfterDrag || this.pickedUpDraggedStack || this.blockedQuickCraftDrag;
+        if (!suppressThisRelease && !this.cancel && !this.dragging && slot instanceof CardPlayerSlot && slot.index == this.clickedSlotId) {
             if (carried.isEmpty()) {
                 int slotId = slot.getContainerSlot();
                 if (slotId >= 0 && slotId < this.selectedInventorySlots.length) {
@@ -263,14 +276,24 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
             }
         }
 
+        this.clearDraggingState();
+
         this.cancel = false;
         this.dragging = false;
         this.pickedUpDraggedStack = false;
+        this.suppressReleaseAfterDrag = false;
+        this.blockedQuickCraftDrag = false;
         this.clickedSlotId = -1;
 
+        // If the user dragged an item, consume the release
+        // This keeps the item on the cursor and requires a new click
+        if (suppressThisRelease) {
+            return true;
+        }
+
         // Check mass select buttons
-        boolean clickedInv = this.isHovering(24 + (16 * 10), this.getMassSelectY() + 1, 4, 5, event.x(), event.y());
-        boolean clickedHotbar = this.isHovering(24 + (16 * 10), this.getMassSelectY() + 1 + (16 * 3) + 10, 4, 5, event.x(), event.y());
+        boolean clickedInv = this.isHovering(24 + (16 * 10), this.getMassSelectY() + 1, 4, 5, mouseX, mouseY);
+        boolean clickedHotbar = this.isHovering(24 + (16 * 10), this.getMassSelectY() + 1 + (16 * 3) + 10, 4, 5, mouseX, mouseY);
 
         if (clickedInv || clickedHotbar) {
             int start = clickedHotbar ? 0 : 9;
