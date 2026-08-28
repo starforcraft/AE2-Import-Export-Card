@@ -4,10 +4,12 @@
   "package": "com.ultramega.ae2importexportcard.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "MixinMEStorageMenu",
-    "MixinWirelessTerminalItem"
+    "MEStorageMenuMixin",
+    "WirelessTerminalItemMixin",
+    "SlotAccessor",
+    "AbstractContainerScreenAccessor"
   ],
   "client": [
-    "MixinMEStorageScreen"
+    "MEStorageScreenMixin"
   ]
 }

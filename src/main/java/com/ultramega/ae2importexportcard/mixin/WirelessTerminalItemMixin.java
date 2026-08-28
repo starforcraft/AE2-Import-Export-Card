@@ -2,6 +2,7 @@ package com.ultramega.ae2importexportcard.mixin;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
+import com.ultramega.ae2importexportcard.item.UpgradeHost;
 import com.ultramega.ae2importexportcard.compat.appflux.AppFluxBridge;
 import com.ultramega.ae2importexportcard.compat.mekanism.MekanismBridge;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
@@ -56,17 +57,11 @@ import static com.ultramega.ae2importexportcard.item.UpgradeHost.SELECTED_INVENT
 import static com.ultramega.ae2importexportcard.item.UpgradeHost.normalizeSelectedInventorySlots;
 
 @Mixin(WirelessTerminalItem.class)
-public abstract class MixinWirelessTerminalItem extends Item {
-    @Unique
-    private static final int ae2importExportCard$FILTER_SIZE = 18;
-
-    @Unique
-    private static final int ae2importExportCard$UPGRADE_CARD_SLOT_COUNT = 3;
-
+public abstract class WirelessTerminalItemMixin extends Item {
     @Unique
     private Future<ICraftingPlan> ae2importExportCard$craftingJob;
 
-    public MixinWirelessTerminalItem(Properties properties) {
+    public WirelessTerminalItemMixin(Properties properties) {
         super(properties);
     }
 
@@ -145,8 +140,9 @@ public abstract class MixinWirelessTerminalItem extends Item {
                                                      boolean importMode) {
         int[] selectedInventorySlots = normalizeSelectedInventorySlots(upgradeStack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS,
             new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT])).toIntArray());
-        ConfigInventory filterConfig = this.ae2importExportCard$getFilterConfig(upgradeStack, player);
-        IUpgradeInventory upgradeInventory = UpgradeInventories.forItem(upgradeStack, ae2importExportCard$UPGRADE_CARD_SLOT_COUNT, null);
+        int upgradeSlotCount = importMode ? UpgradeHost.IMPORT_UPGRADE_SLOT_COUNT : UpgradeHost.EXPORT_UPGRADE_SLOT_COUNT;
+        IUpgradeInventory upgradeInventory = UpgradeInventories.forItem(upgradeStack, upgradeSlotCount, null);
+        ConfigInventory filterConfig = this.ae2importExportCard$getFilterConfig(upgradeStack, player, UpgradeHost.getFilterSlotCount(upgradeInventory));
 
         FuzzyMode fuzzyMode = this.ae2importExportCard$getFuzzyMode(upgradeStack);
         boolean fuzzy = upgradeInventory.isInstalled(AEItems.FUZZY_CARD);
@@ -180,8 +176,8 @@ public abstract class MixinWirelessTerminalItem extends Item {
     }
 
     @Unique
-    private ConfigInventory ae2importExportCard$getFilterConfig(ItemStack upgradeStack, ServerPlayer player) {
-        ConfigInventory filterConfig = ConfigInventory.configTypes(ae2importExportCard$FILTER_SIZE)
+    private ConfigInventory ae2importExportCard$getFilterConfig(ItemStack upgradeStack, ServerPlayer player, int filterSize) {
+        ConfigInventory filterConfig = ConfigInventory.configTypes(filterSize)
             .changeListener(null)
             .build();
         filterConfig.readFromChildTag(upgradeStack.getOrDefault(ModDataComponents.FILTER_CONFIG, new CompoundTag()), "", player.registryAccess());

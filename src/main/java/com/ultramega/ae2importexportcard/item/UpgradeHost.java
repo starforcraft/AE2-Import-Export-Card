@@ -11,6 +11,7 @@ import java.util.List;
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.ids.AEComponents;
+import appeng.core.definitions.AEItems;
 import appeng.api.upgrades.IUpgradeInventory;
 import appeng.api.upgrades.UpgradeInventories;
 import appeng.api.util.IConfigManager;
@@ -27,8 +28,14 @@ import net.minecraft.world.item.component.ItemContainerContents;
 
 public class UpgradeHost implements IConfigurableObject {
     public static final int SELECTED_INVENTORY_SLOT_COUNT = 40;
+    public static final int BASE_FILTER_SLOT_COUNT = 18;
+    public static final int FILTER_SLOTS_PER_CAPACITY_CARD = 9;
+    public static final int MAX_CAPACITY_CARD_COUNT = 3;
+    public static final int MAX_FILTER_SLOT_COUNT = BASE_FILTER_SLOT_COUNT + MAX_CAPACITY_CARD_COUNT * FILTER_SLOTS_PER_CAPACITY_CARD;
+    public static final int IMPORT_UPGRADE_SLOT_COUNT = 4;
+    public static final int EXPORT_UPGRADE_SLOT_COUNT = 5;
 
-    public final ConfigInventory filterConfig = ConfigInventory.configTypes(18)
+    public final ConfigInventory filterConfig = ConfigInventory.configTypes(MAX_FILTER_SLOT_COUNT)
             .changeListener(this::updateFilter)
             .build();
 
@@ -124,13 +131,41 @@ public class UpgradeHost implements IConfigurableObject {
         return normalized;
     }
 
+    public static int getUpgradeSlotCount(UpgradeType type) {
+        return type == UpgradeType.EXPORT ? EXPORT_UPGRADE_SLOT_COUNT : IMPORT_UPGRADE_SLOT_COUNT;
+    }
+
+    public static int getFilterSlotCount(IUpgradeInventory upgrades) {
+        int capacityCards = Math.min(MAX_CAPACITY_CARD_COUNT, upgrades.getInstalledUpgrades(AEItems.CAPACITY_CARD));
+        return BASE_FILTER_SLOT_COUNT + capacityCards * FILTER_SLOTS_PER_CAPACITY_CARD;
+    }
+
+    public int getActiveFilterSlotCount() {
+        return getFilterSlotCount(this.getUpgrades());
+    }
+
     public IUpgradeInventory getUpgrades() {
-        return UpgradeInventories.forItem(this.upgradeStack, this.type == UpgradeType.EXPORT ? 3 : 2, this::onUpgradesChanged);
+        return UpgradeInventories.forItem(this.upgradeStack, getUpgradeSlotCount(this.type), this::onUpgradesChanged);
     }
 
     private void onUpgradesChanged(ItemStack stack, IUpgradeInventory upgrades) {
         if (upgrades instanceof AppEngInternalInventory internalInventory) {
             stack.set(AEComponents.UPGRADES, internalInventory.toItemContainerContents());
+        }
+        if (this.type == UpgradeType.EXPORT) {
+            int activeFilterSlots = getFilterSlotCount(upgrades);
+            int[] selectedInventorySlots = stack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS,
+                new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT])).toIntArray();
+            boolean changed = false;
+            for (int i = 0; i < selectedInventorySlots.length; i++) {
+                if (selectedInventorySlots[i] > activeFilterSlots) {
+                    selectedInventorySlots[i] = 0;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                stack.set(ModDataComponents.SELECTED_INVENTORY_SLOTS, new IntArrayList(selectedInventorySlots));
+            }
         }
         ItemContainerContents itemContainerContents = this.itemStack.getOrDefault(AEComponents.UPGRADES, ItemContainerContents.EMPTY);
         ArrayList<ItemStack> newUpgrades = new ArrayList<>();

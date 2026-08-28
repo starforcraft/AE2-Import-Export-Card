@@ -2,9 +2,12 @@ package com.ultramega.ae2importexportcard.container;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.item.UpgradeHost;
+import com.ultramega.ae2importexportcard.mixin.SlotAccessor;
 import com.ultramega.ae2importexportcard.registry.ModSlotSemantics;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import appeng.api.config.FuzzyMode;
@@ -20,6 +23,8 @@ import appeng.menu.SlotSemantics;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.implementations.MenuTypeBuilder;
 import appeng.menu.slot.FakeSlot;
+import appeng.menu.slot.IOptionalSlotHost;
+import appeng.menu.slot.OptionalFakeSlot;
 import appeng.util.ConfigInventory;
 import appeng.util.ConfigMenuInventory;
 import com.google.common.base.Preconditions;
@@ -32,7 +37,7 @@ import net.minecraft.world.level.ItemLike;
 
 import static com.ultramega.ae2importexportcard.AE2ImportExportCard.MODID;
 
-public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
+public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu, IOptionalSlotHost {
     public static final MenuType<UpgradeContainerMenu> TYPE_IMPORT = MenuTypeBuilder.create((id, inventory, host) ->
             new UpgradeContainerMenu(UpgradeType.IMPORT, id, inventory, host, new UpgradeHost(UpgradeType.IMPORT, id, inventory, host)), WirelessTerminalMenuHost.class)
         .build(ResourceLocation.fromNamespaceAndPath(MODID, AE2ImportExportCard.IMPORT_CARD_ID));
@@ -49,6 +54,7 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     private static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
 
     private final WirelessTerminalMenuHost<?> host;
+    private final List<ArmorSlot> armorSlots = new ArrayList<>();
     private final UpgradeHost upgradeHost;
 
     @GuiSync(0)
@@ -68,8 +74,20 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
     private void addConfigSlots(ConfigInventory config, SlotSemantic slotSemantic) {
         ConfigMenuInventory inv = config.createMenuWrapper();
 
-        for (int i = 0; i < 18; ++i) {
-            this.addSlot(new FakeSlot(inv, i), slotSemantic);
+        for (int i = 0; i < UpgradeHost.MAX_FILTER_SLOT_COUNT; ++i) {
+            if (i < UpgradeHost.BASE_FILTER_SLOT_COUNT) {
+                this.addSlot(new FakeSlot(inv, i), slotSemantic);
+            } else {
+                int optionalRow = (i - UpgradeHost.BASE_FILTER_SLOT_COUNT) / 9;
+                this.addSlot(new OptionalFakeSlot(inv, this, i, optionalRow), slotSemantic);
+            }
+        }
+    }
+
+    public void updateArmorSlotPositions(int capacityCardCount) {
+        int armorBaseY = 70 + capacityCardCount * 18;
+        for (int i = 0; i < this.armorSlots.size(); i++) {
+            ((SlotAccessor) this.armorSlots.get(i)).setY(armorBaseY + i * 18);
         }
     }
 
@@ -83,11 +101,27 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
             this.addSlot(slot, s);
         }
 
+        int capacityCardCount = this.getCapacityCardCount();
         for (int i = 0; i < 4; i++) {
             EquipmentSlot equipmentslot = SLOT_IDS[i];
             ResourceLocation texture = TEXTURE_EMPTY_SLOTS.get(equipmentslot);
-            this.addSlot(new ArmorSlot(playerInventory, playerInventory.player, equipmentslot, 39 - i, 2, 70 + i * 18, texture));
+            ArmorSlot armorSlot = new ArmorSlot(
+                playerInventory,
+                playerInventory.player,
+                equipmentslot,
+                39 - i,
+                2,
+                70 + capacityCardCount * 18 + i * 18,
+                texture
+            );
+            this.armorSlots.add(armorSlot);
+            this.addSlot(armorSlot);
         }
+    }
+
+    @Override
+    public boolean isSlotEnabled(int idx) {
+        return this.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD) > idx;
     }
 
     @Override
@@ -99,6 +133,10 @@ public class UpgradeContainerMenu extends AEBaseMenu implements ISubMenu {
                 this.setFuzzyMode(this.getUpgradeHost().getConfigManager().getSetting(Settings.FUZZY_MODE));
             }
         }
+    }
+
+    private int getCapacityCardCount() {
+        return Math.min(UpgradeHost.MAX_CAPACITY_CARD_COUNT, this.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD));
     }
 
     @Override
