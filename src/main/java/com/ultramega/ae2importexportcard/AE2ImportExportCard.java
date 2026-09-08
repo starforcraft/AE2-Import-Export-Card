@@ -1,6 +1,7 @@
 package com.ultramega.ae2importexportcard;
 
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
+import com.ultramega.ae2importexportcard.network.BlockPickerData;
 import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
 import com.ultramega.ae2importexportcard.registry.ModCreativeTabs;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
@@ -28,6 +29,7 @@ public final class AE2ImportExportCard {
 
     public static final String IMPORT_CARD_ID = "import_card";
     public static final String EXPORT_CARD_ID = "export_card";
+    public static final String BLOCK_PICKER_CARD_ID = "block_picker_card";
 
     public static boolean AE2WTLIB_INSTALLED = false;
     public static boolean APPFLUX_INSTALLED = false;
@@ -43,6 +45,7 @@ public final class AE2ImportExportCard {
         modEventBus.addListener((RegisterPayloadHandlersEvent event) -> {
             PayloadRegistrar registrar = event.registrar(MODID);
             registrar.playBidirectional(UpgradeUpdateData.TYPE, UpgradeUpdateData.STREAM_CODEC, UpgradeUpdateData::handle);
+            registrar.playToServer(BlockPickerData.TYPE, BlockPickerData.STREAM_CODEC, BlockPickerData::handle);
         });
 
         modEventBus.addListener(this::registerScreens);
@@ -63,15 +66,19 @@ public final class AE2ImportExportCard {
     private void commonSetup(final FMLCommonSetupEvent event) {
         Upgrades.add(ModItems.IMPORT_CARD.get(), AEItems.WIRELESS_TERMINAL, 1);
         Upgrades.add(ModItems.EXPORT_CARD.get(), AEItems.WIRELESS_TERMINAL, 1);
+        Upgrades.add(ModItems.BLOCK_PICKER_CARD.get(), AEItems.WIRELESS_TERMINAL, 1);
         Upgrades.add(ModItems.IMPORT_CARD.get(), AEItems.WIRELESS_CRAFTING_TERMINAL, 1);
         Upgrades.add(ModItems.EXPORT_CARD.get(), AEItems.WIRELESS_CRAFTING_TERMINAL, 1);
+        Upgrades.add(ModItems.BLOCK_PICKER_CARD.get(), AEItems.WIRELESS_CRAFTING_TERMINAL, 1);
         if (ModList.get().isLoaded("ae2wtlib")) {
             AE2WTLIB_INSTALLED = true;
 
             Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
             Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibAPI.getWUT(), 1);
+            Upgrades.add(ModItems.BLOCK_PICKER_CARD.get(), AE2wtlibAPI.getWUT(), 1);
             Upgrades.add(ModItems.IMPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
             Upgrades.add(ModItems.EXPORT_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
+            Upgrades.add(ModItems.BLOCK_PICKER_CARD.get(), AE2wtlibItems.PATTERN_ENCODING_TERMINAL, 1);
         }
         APPFLUX_INSTALLED = ModList.get().isLoaded("appflux");
         MEKANISM_INSTALLED = ModList.get().isLoaded("mekanism");

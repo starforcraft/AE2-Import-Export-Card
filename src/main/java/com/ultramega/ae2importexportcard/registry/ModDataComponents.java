@@ -5,6 +5,7 @@ import com.ultramega.ae2importexportcard.util.IntegerArrayCodec;
 
 import java.util.function.Consumer;
 
+import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -21,9 +22,13 @@ public class ModDataComponents {
     private static final Consumer<DataComponentType.Builder<IntList>> INTEGER_ARRAY_TAG_CODECS = builder -> builder
             .persistent(IntegerArrayCodec.INT_LIST_CODEC).networkSynchronized(IntegerArrayCodec.INT_LIST_STREAM_CODEC);
 
+    private static final Consumer<DataComponentType.Builder<Integer>> INTEGER_CODECS = builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT);
+
     public static final DataComponentType<CompoundTag> FILTER_CONFIG = register("filter_config", COMPOUND_TAG_CODECS);
 
     public static final DataComponentType<IntList> SELECTED_INVENTORY_SLOTS = register("selected_inventory_slots", INTEGER_ARRAY_TAG_CODECS);
+
+    public static final DataComponentType<Integer> BLOCK_PICKER_AMOUNT = register("block_picker_amount", INTEGER_CODECS);
 
     private static <T> DataComponentType<T> register(String name, Consumer<DataComponentType.Builder<T>> customizer) {
         var builder = DataComponentType.<T>builder();

@@ -12,4 +12,5 @@ public class ModItems {
 
     public static final DeferredItem<Item> IMPORT_CARD = ITEMS.register(AE2ImportExportCard.IMPORT_CARD_ID, () -> Upgrades.createUpgradeCardItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> EXPORT_CARD = ITEMS.register(AE2ImportExportCard.EXPORT_CARD_ID, () -> Upgrades.createUpgradeCardItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> BLOCK_PICKER_CARD = ITEMS.register(AE2ImportExportCard.BLOCK_PICKER_CARD_ID, () -> Upgrades.createUpgradeCardItem(new Item.Properties().stacksTo(1)));
 }

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ERE",
+    "XRA",
+    "CRC"
+  ],
+  "key": {
+    "X": { "item": "minecraft:diamond_pickaxe" },
+    "R": { "item": "minecraft:redstone_block" },
+    "A": { "item": "ae2:advanced_card" },
+    "C": { "item": "ae2:calculation_processor" },
+    "E": { "item": "ae2:engineering_processor" }
+  },
+  "result": {
+    "count": 1,
+    "id": "ae2importexportcard:block_picker_card"
+  }
+}

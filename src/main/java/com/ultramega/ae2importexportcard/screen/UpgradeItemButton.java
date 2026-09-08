@@ -42,12 +42,11 @@ public class UpgradeItemButton extends IconButton {
                 blitter.dest(this.getX(), this.getY()).zOffset(20).blit(guiGraphics);
             } else {
                 if (!this.isDisableBackground()) {
-                    Icon bgIcon = this.isHoveredOrFocused() ? Icon.TOOLBAR_BUTTON_BACKGROUND_HOVER
-                            : Icon.TOOLBAR_BUTTON_BACKGROUND;
+                    Icon bgIcon = this.isHoveredOrFocused() ? Icon.TOOLBAR_BUTTON_BACKGROUND_HOVER : Icon.TOOLBAR_BUTTON_BACKGROUND;
                     bgIcon.getBlitter()
-                            .dest(this.getX() - 1, this.getY() + yOffset, 18, 20)
-                            .zOffset(2)
-                            .blit(guiGraphics);
+                        .dest(this.getX() - 1, this.getY() + yOffset, 18, 20)
+                        .zOffset(2)
+                        .blit(guiGraphics);
                 }
 
                 blitter.dest(this.getX(), this.getY() + 1 + yOffset).zOffset(3).blit(guiGraphics);
