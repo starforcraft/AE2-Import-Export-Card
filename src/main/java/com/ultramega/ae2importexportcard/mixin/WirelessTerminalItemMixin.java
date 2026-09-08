@@ -2,8 +2,8 @@ package com.ultramega.ae2importexportcard.mixin;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
-import com.ultramega.ae2importexportcard.item.UpgradeHost;
 import com.ultramega.ae2importexportcard.compat.appflux.AppFluxBridge;
+import com.ultramega.ae2importexportcard.item.UpgradeHost;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
@@ -64,7 +64,7 @@ import static com.ultramega.ae2importexportcard.item.UpgradeHost.SELECTED_INVENT
 @Mixin(WirelessTerminalItem.class)
 public abstract class WirelessTerminalItemMixin extends Item {
     @Unique
-    private Future<ICraftingPlan> ae2importExportCard$craftingJob;
+    private Future<ICraftingPlan> ae2ImportExportCard$craftingJob;
 
     public WirelessTerminalItemMixin(Properties properties) {
         super(properties);
@@ -81,21 +81,21 @@ public abstract class WirelessTerminalItemMixin extends Item {
         }
 
         // This also checks if we are in access point range
-        IGrid grid = this.ae2importExportCard$getGrid(wirelessTerminalItem, player, itemStack, level);
+        IGrid grid = this.ae2ImportExportCard$getGrid(wirelessTerminalItem, player, itemStack, level);
         if (grid == null || grid.getStorageService() == null) {
             return;
         }
 
-        WirelessTerminalMenuHost<?> host = this.ae2importExportCard$getHost(wirelessTerminalItem, player, itemStack);
+        WirelessTerminalMenuHost<?> host = this.ae2ImportExportCard$getHost(wirelessTerminalItem, player, itemStack);
         if (host == null || host.getActionableNode() == null) {
             return;
         }
 
-        this.ae2importExportCard$tickUpgradeCards(itemStack, player, level, grid, host);
+        this.ae2ImportExportCard$tickUpgradeCards(itemStack, player, level, grid, host);
     }
 
     @Unique
-    private IGrid ae2importExportCard$getGrid(WirelessTerminalItem wirelessTerminalItem, ServerPlayer player, ItemStack terminalStack, Level level) {
+    private IGrid ae2ImportExportCard$getGrid(WirelessTerminalItem wirelessTerminalItem, ServerPlayer player, ItemStack terminalStack, Level level) {
         IGrid grid = null;
 
         if (AE2ImportExportCard.AE2WTLIB_INSTALLED) {
@@ -110,7 +110,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private WirelessTerminalMenuHost<?> ae2importExportCard$getHost(WirelessTerminalItem wirelessTerminalItem, ServerPlayer player, ItemStack terminalStack) {
+    private WirelessTerminalMenuHost<?> ae2ImportExportCard$getHost(WirelessTerminalItem wirelessTerminalItem, ServerPlayer player, ItemStack terminalStack) {
         if (wirelessTerminalItem.getMenuHost(player, MenuLocators.forStack(terminalStack), null) instanceof WirelessTerminalMenuHost<?> host) {
             return host;
         }
@@ -119,7 +119,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$tickUpgradeCards(ItemStack terminalStack, ServerPlayer player, Level level, IGrid grid, WirelessTerminalMenuHost<?> host) {
+    private void ae2ImportExportCard$tickUpgradeCards(ItemStack terminalStack, ServerPlayer player, Level level, IGrid grid, WirelessTerminalMenuHost<?> host) {
         ItemContainerContents upgrades = terminalStack.getOrDefault(AEComponents.UPGRADES, ItemContainerContents.EMPTY);
 
         for (int i = 0; i < upgrades.getSlots(); i++) {
@@ -131,12 +131,12 @@ public abstract class WirelessTerminalItemMixin extends Item {
                 continue;
             }
 
-            this.ae2importExportCard$tickUpgradeCard(terminalStack, upgradeStack, player, level, grid, host, isImportUpgrade);
+            this.ae2ImportExportCard$tickUpgradeCard(terminalStack, upgradeStack, player, level, grid, host, isImportUpgrade);
         }
     }
 
     @Unique
-    private void ae2importExportCard$tickUpgradeCard(ItemStack terminalStack,
+    private void ae2ImportExportCard$tickUpgradeCard(ItemStack terminalStack,
                                                      ItemStack upgradeStack,
                                                      ServerPlayer player,
                                                      Level level,
@@ -147,9 +147,9 @@ public abstract class WirelessTerminalItemMixin extends Item {
             new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT])).toIntArray();
         int upgradeSlotCount = importMode ? UpgradeHost.IMPORT_UPGRADE_SLOT_COUNT : UpgradeHost.EXPORT_UPGRADE_SLOT_COUNT;
         IUpgradeInventory upgradeInventory = UpgradeInventories.forItem(upgradeStack, upgradeSlotCount, null);
-        ConfigInventory filterConfig = this.ae2importExportCard$getFilterConfig(upgradeStack, player, UpgradeHost.getFilterSlotCount(upgradeInventory));
+        ConfigInventory filterConfig = this.ae2ImportExportCard$getFilterConfig(upgradeStack, player, UpgradeHost.getFilterSlotCount(upgradeInventory));
 
-        FuzzyMode fuzzyMode = this.ae2importExportCard$getFuzzyMode(upgradeStack);
+        FuzzyMode fuzzyMode = this.ae2ImportExportCard$getFuzzyMode(upgradeStack);
         boolean fuzzy = upgradeInventory.isInstalled(AEItems.FUZZY_CARD);
         boolean invertFilter = upgradeInventory.isInstalled(AEItems.INVERTER_CARD);
 
@@ -171,17 +171,17 @@ public abstract class WirelessTerminalItemMixin extends Item {
             }
 
             if (importMode) {
-                this.ae2importExportCard$importFromPlayerSlot(player, grid, energySource, source, inventorySlot,
+                this.ae2ImportExportCard$importFromPlayerSlot(player, grid, energySource, source, inventorySlot,
                     itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
             } else {
-                this.ae2importExportCard$exportToPlayerSlot(player, level, grid, energySource, source, inventorySlot,
+                this.ae2ImportExportCard$exportToPlayerSlot(player, level, grid, energySource, source, inventorySlot,
                     itemInInventory, selectedFilterSlot, filterConfig, upgradeInventory, fuzzyMode);
             }
         }
     }
 
     @Unique
-    private ConfigInventory ae2importExportCard$getFilterConfig(ItemStack upgradeStack, ServerPlayer player, int filterSize) {
+    private ConfigInventory ae2ImportExportCard$getFilterConfig(ItemStack upgradeStack, ServerPlayer player, int filterSize) {
         ConfigInventory filterConfig = ConfigInventory.configTypes(filterSize)
             .changeListener(null)
             .build();
@@ -194,7 +194,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private FuzzyMode ae2importExportCard$getFuzzyMode(ItemStack upgradeStack) {
+    private FuzzyMode ae2ImportExportCard$getFuzzyMode(ItemStack upgradeStack) {
         IConfigManager configManager = IConfigManager.builder(upgradeStack)
             .registerSetting(Settings.FUZZY_MODE, FuzzyMode.IGNORE_ALL)
             .build();
@@ -203,7 +203,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$importFromPlayerSlot(ServerPlayer player,
+    private void ae2ImportExportCard$importFromPlayerSlot(ServerPlayer player,
                                                           IGrid grid,
                                                           ActionHostEnergySource energySource,
                                                           IActionSource source,
@@ -217,7 +217,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
             return;
         }
 
-        this.ae2importExportCard$importFluidFromItem(player, grid, energySource, source, inventorySlot,
+        this.ae2ImportExportCard$importFluidFromItem(player, grid, energySource, source, inventorySlot,
             itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
         /*MekanismBridge.importChemicalFromItem(player, grid, energySource, source, inventorySlot,
@@ -226,11 +226,11 @@ public abstract class WirelessTerminalItemMixin extends Item {
         AppFluxBridge.importEnergyFromItem(player, grid, energySource, source, inventorySlot,
             itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
 
-        this.ae2importExportCard$importItem(player, grid, energySource, source, inventorySlot, itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
+        this.ae2ImportExportCard$importItem(player, grid, energySource, source, inventorySlot, itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
     }
 
     @Unique
-    private void ae2importExportCard$importItem(ServerPlayer player,
+    private void ae2ImportExportCard$importItem(ServerPlayer player,
                                                 IGrid grid,
                                                 ActionHostEnergySource energySource,
                                                 IActionSource source,
@@ -273,7 +273,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$importFluidFromItem(ServerPlayer player,
+    private void ae2ImportExportCard$importFluidFromItem(ServerPlayer player,
                                                          IGrid grid,
                                                          ActionHostEnergySource energySource,
                                                          IActionSource source,
@@ -339,7 +339,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$exportToPlayerSlot(ServerPlayer player,
+    private void ae2ImportExportCard$exportToPlayerSlot(ServerPlayer player,
                                                         Level level,
                                                         IGrid grid,
                                                         ActionHostEnergySource energySource,
@@ -360,7 +360,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
             return;
         }
 
-        AEKey exportKey = this.ae2importExportCard$resolveExportKey(grid, filter.what(), upgradeInventory, fuzzyMode);
+        AEKey exportKey = this.ae2ImportExportCard$resolveExportKey(grid, filter.what(), upgradeInventory, fuzzyMode);
         if (exportKey == null) {
             return;
         }
@@ -371,10 +371,10 @@ public abstract class WirelessTerminalItemMixin extends Item {
         }
 
         if (exportKey instanceof AEItemKey itemKey) {
-            this.ae2importExportCard$exportItemToPlayerSlot(level, grid, energySource, source, inventorySlot,
+            this.ae2ImportExportCard$exportItemToPlayerSlot(level, grid, energySource, source, inventorySlot,
                 itemKey, filter.what(), itemHandler, upgradeInventory);
         } else if (exportKey instanceof AEFluidKey fluidKey) {
-            this.ae2importExportCard$exportFluidToPlayerSlot(player, grid, energySource, source, inventorySlot,
+            this.ae2ImportExportCard$exportFluidToPlayerSlot(player, grid, energySource, source, inventorySlot,
                 itemInInventory, fluidKey, upgradeInventory);
         } /*else if (MekanismBridge.isChemicalKey(exportKey)) {
             long chemicalAmount = upgradeInventory.isInstalled(AEItems.SPEED_CARD)
@@ -388,7 +388,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
 
             boolean exported = MekanismBridge.exportChemicalToItem(player, grid, energySource, source, inventorySlot, itemInInventory, exportKey, chemicalAmount);
             if (!exported) {
-                this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) chemicalAmount, upgradeInventory);
+                this.ae2ImportExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) chemicalAmount, upgradeInventory);
             }
         }*/
         else if (AppFluxBridge.isFluxKey(exportKey)) {
@@ -403,13 +403,13 @@ public abstract class WirelessTerminalItemMixin extends Item {
 
             boolean exported = AppFluxBridge.exportEnergyToItem(player, grid, energySource, source, inventorySlot, itemInInventory, exportKey, energyAmount);
             if (!exported) {
-                this.ae2importExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) energyAmount, upgradeInventory);
+                this.ae2ImportExportCard$requestCraftingIfPossible(level, grid, filter.what(), (int) energyAmount, upgradeInventory);
             }
         }
     }
 
     @Unique
-    private AEKey ae2importExportCard$resolveExportKey(IGrid grid, AEKey filterKey, IUpgradeInventory upgradeInventory, FuzzyMode fuzzyMode) {
+    private AEKey ae2ImportExportCard$resolveExportKey(IGrid grid, AEKey filterKey, IUpgradeInventory upgradeInventory, FuzzyMode fuzzyMode) {
         if (!upgradeInventory.isInstalled(AEItems.FUZZY_CARD)) {
             return filterKey;
         }
@@ -424,7 +424,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$exportItemToPlayerSlot(Level level,
+    private void ae2ImportExportCard$exportItemToPlayerSlot(Level level,
                                                             IGrid grid,
                                                             ActionHostEnergySource energySource,
                                                             IActionSource source,
@@ -450,7 +450,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
 
         long extractable = StorageHelper.poweredExtraction(energySource, grid.getStorageService().getInventory(), itemKey, requestedAmount, source, Actionable.SIMULATE);
         if (extractable <= 0) {
-            this.ae2importExportCard$requestCraftingIfPossible(level, grid, craftingKey, requestedAmount, upgradeInventory);
+            this.ae2ImportExportCard$requestCraftingIfPossible(level, grid, craftingKey, requestedAmount, upgradeInventory);
             return;
         }
 
@@ -473,7 +473,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$exportFluidToPlayerSlot(ServerPlayer player,
+    private void ae2ImportExportCard$exportFluidToPlayerSlot(ServerPlayer player,
                                                              IGrid grid,
                                                              ActionHostEnergySource energySource,
                                                              IActionSource source,
@@ -526,7 +526,7 @@ public abstract class WirelessTerminalItemMixin extends Item {
     }
 
     @Unique
-    private void ae2importExportCard$requestCraftingIfPossible(Level level, IGrid grid, AEKey what, int amount, IUpgradeInventory upgradeInventory) {
+    private void ae2ImportExportCard$requestCraftingIfPossible(Level level, IGrid grid, AEKey what, int amount, IUpgradeInventory upgradeInventory) {
         if (!upgradeInventory.isInstalled(AEItems.CRAFTING_CARD)) {
             return;
         }
@@ -538,22 +538,22 @@ public abstract class WirelessTerminalItemMixin extends Item {
 
         MachineSource source = new MachineSource(grid::getPivot);
 
-        if (this.ae2importExportCard$craftingJob != null) {
-            if (!this.ae2importExportCard$craftingJob.isDone()) {
+        if (this.ae2ImportExportCard$craftingJob != null) {
+            if (!this.ae2ImportExportCard$craftingJob.isDone()) {
                 return;
             }
 
             try {
-                ICraftingPlan job = this.ae2importExportCard$craftingJob.get();
+                ICraftingPlan job = this.ae2ImportExportCard$craftingJob.get();
                 if (job != null) {
                     craftingService.submitJob(job, null, null, false, source);
                 }
             } catch (InterruptedException | ExecutionException ignored) {
             } finally {
-                this.ae2importExportCard$craftingJob = null;
+                this.ae2ImportExportCard$craftingJob = null;
             }
         }
 
-        this.ae2importExportCard$craftingJob = craftingService.beginCraftingCalculation(level, () -> source, what, amount, CalculationStrategy.CRAFT_LESS);
+        this.ae2ImportExportCard$craftingJob = craftingService.beginCraftingCalculation(level, () -> source, what, amount, CalculationStrategy.CRAFT_LESS);
     }
 }

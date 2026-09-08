@@ -25,6 +25,7 @@ public class ItemModelProvider extends ModelSubProvider {
     protected void register() {
         this.flatSingleLayer(ModItems.IMPORT_CARD, "item/import_card");
         this.flatSingleLayer(ModItems.EXPORT_CARD, "item/export_card");
+        this.flatSingleLayer(ModItems.BLOCK_PICKER_CARD, "item/block_picker_card");
     }
 
     private void flatSingleLayer(ItemLike item, String texture) {

@@ -16,8 +16,8 @@ import appeng.api.config.Settings;
 import appeng.api.upgrades.Upgrades;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.implementations.AESubScreen;
-import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.style.Blitter;
+import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.ServerSettingToggleButton;
 import appeng.client.gui.widgets.SettingToggleButton;
 import appeng.client.gui.widgets.UpgradesPanel;
@@ -136,8 +136,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     public void extractContents(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         super.extractContents(graphics, mouseX, mouseY, a);
 
-        for (int i = 0; i < this.menu.slots.size(); i++) {
-            Slot slot = this.menu.slots.get(i);
+        for (final Slot slot : this.getMenu().slots) {
             final int x = this.leftPos + slot.x;
             final int y = this.topPos + slot.y;
 
@@ -145,7 +144,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
                 continue;
             }
             if (slot instanceof FakeSlot) {
-                if (this.type != UpgradeType.IMPORT) {
+                if (this.type == UpgradeType.EXPORT) {
                     drawSlotHighlight(graphics, this.type, this.font, x, y, true, slot.getContainerSlot() + 1);
                 }
                 continue;
@@ -331,6 +330,11 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
         } else {
             this.selectedInventorySlots[index] = this.selectedInventorySlots[index] == 0 ? 1 : 0;
         }
+    }
+
+    @Override
+    public void onClose() {
+        AESubScreen.goBack();
     }
 
     public void sendUpdate() {

@@ -1,0 +1,27 @@
+{
+  "$schema": "schema.json",
+  "includes": ["common/common.json", "common/player_inventory.json"],
+  "background": {
+    "texture": "ae2importexportcard:textures/gui/block_picker_amount.png",
+    "srcRect": [0, 0, 176, 188]
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2importexportcard.block_picker_amount"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    }
+  },
+  "widgets": {
+    "back": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    }
+  }
+}

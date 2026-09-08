@@ -42,6 +42,17 @@ public class MainRecipeProvider extends RecipeProvider {
             .define('E', AEItems.ENGINEERING_PROCESSOR)
             .unlockedBy("has_calculation_processor", this.has(AEItems.CALCULATION_PROCESSOR))
             .save(this.output);
+        this.shaped(RecipeCategory.MISC, ModItems.BLOCK_PICKER_CARD, 1)
+            .pattern("ERE")
+            .pattern("XRA")
+            .pattern("CRC")
+            .define('X', Items.DIAMOND_PICKAXE)
+            .define('R', Items.REDSTONE_BLOCK)
+            .define('A', AEItems.ADVANCED_CARD)
+            .define('C', AEItems.CALCULATION_PROCESSOR)
+            .define('E', AEItems.ENGINEERING_PROCESSOR)
+            .unlockedBy("has_calculation_processor", this.has(AEItems.CALCULATION_PROCESSOR))
+            .save(this.output);
     }
 
     public static final class Runner extends RecipeProvider.Runner {

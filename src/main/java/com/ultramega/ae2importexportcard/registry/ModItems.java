@@ -14,4 +14,6 @@ public class ModItems {
         Upgrades.createUpgradeCardItem(properties.stacksTo(1)));
     public static final DeferredItem<Item> EXPORT_CARD = ITEMS.registerItem(AE2ImportExportCard.EXPORT_CARD_ID, (properties) ->
         Upgrades.createUpgradeCardItem(properties.stacksTo(1)));
+    public static final DeferredItem<Item> BLOCK_PICKER_CARD = ITEMS.registerItem(AE2ImportExportCard.BLOCK_PICKER_CARD_ID, (properties) ->
+        Upgrades.createUpgradeCardItem(properties.stacksTo(1)));
 }

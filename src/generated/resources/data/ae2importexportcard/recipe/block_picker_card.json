@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "ae2:advanced_card",
+    "C": "ae2:calculation_processor",
+    "E": "ae2:engineering_processor",
+    "R": "minecraft:redstone_block",
+    "X": "minecraft:diamond_pickaxe"
+  },
+  "pattern": [
+    "ERE",
+    "XRA",
+    "CRC"
+  ],
+  "result": {
+    "id": "ae2importexportcard:block_picker_card"
+  }
+}
