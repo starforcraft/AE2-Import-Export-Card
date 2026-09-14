@@ -1,6 +1,7 @@
 package com.ultramega.ae2importexportcard.screen;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
+import com.ultramega.ae2importexportcard.compat.curios.CuriosBridge;
 import com.ultramega.ae2importexportcard.container.CardPlayerSlot;
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
 import com.ultramega.ae2importexportcard.item.UpgradeHost;
@@ -32,6 +33,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -55,6 +57,9 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
     private final UpgradeType type;
 
+    private final CuriosSlotPanel curiosPanel;
+    private ImageButton curiosButton;
+    private boolean clickedCuriosPanel;
     private final SettingToggleButton<FuzzyMode> fuzzyMode;
 
     private final int[] selectedInventorySlots;
@@ -74,6 +79,7 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
                          final ScreenStyle style) {
         super(containerMenu, playerInventory, title, style);
         this.type = type;
+        this.curiosPanel = type == UpgradeType.EXPORT && CuriosBridge.isLoaded() ? new CuriosSlotPanel(containerMenu) : null;
         this.selectedInventorySlots = containerMenu.getUpgradeHost().getSelectedInventorySlots();
         this.widgets.add("upgrades", new UpgradesPanel(this.menu.getSlots(SlotSemantics.UPGRADE), this::getCompatibleUpgrades));
 
@@ -86,9 +92,16 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
         this.updateImageHeight(this.displayedCapacityCardCount);
     }
 
+    @Override
+    protected void init() {
+        super.init();
+        if (this.curiosPanel != null) {
+            this.curiosButton = this.addRenderableWidget(this.curiosPanel.createButton(this.leftPos, this.topPos + 70 + this.displayedCapacityCardCount * 18));
+        }
+    }
+
     private int getCapacityCardCount() {
-        return Math.min(UpgradeHost.MAX_CAPACITY_CARD_COUNT,
-            this.menu.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD));
+        return Math.min(UpgradeHost.MAX_CAPACITY_CARD_COUNT, this.menu.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD));
     }
 
     private int getMassSelectY() {
@@ -116,6 +129,10 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     protected void updateBeforeRender() {
         super.updateBeforeRender();
         this.updateCapacityLayout();
+        if (this.curiosButton != null) {
+            this.curiosButton.setX(this.leftPos + 4);
+            this.curiosButton.setY(this.topPos + 70 - 13 + this.displayedCapacityCardCount * 18);
+        }
 
         this.fuzzyMode.set(this.menu.getFuzzyMode());
         this.fuzzyMode.setVisibility(this.menu.hasUpgrade(AEItems.FUZZY_CARD));
@@ -162,7 +179,14 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
             }
         }
 
-        renderMassSelect(graphics, this.leftPos + 23 + (16 * 10), this.topPos + 76);
+        if (this.curiosPanel != null) {
+            graphics.pose().pushPose();
+            graphics.pose().translate(-this.leftPos, -this.topPos, 0);
+            this.curiosPanel.render(graphics, this.font, this.leftPos, this.topPos + 112, mouseX, mouseY);
+            graphics.pose().popPose();
+        }
+
+        renderMassSelect(graphics, 23 + (16 * 10), this.getMassSelectY());
     }
 
     public static void renderSlotHighlight(GuiGraphics graphics, UpgradeType type, Font font, int x, int y, boolean checked, int filterIndex) {
@@ -202,6 +226,13 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
     @Override
     public boolean mouseClicked(double xCoord, double yCoord, int button) {
         ItemStack carried = this.draggingItem.isEmpty() ? this.menu.getCarried() : this.draggingItem;
+        if (this.curiosPanel != null && this.curiosPanel.contains(xCoord, yCoord)) {
+            this.clickedCuriosPanel = true;
+            if (this.curiosPanel.mouseClicked(xCoord, yCoord, button, !carried.isEmpty())) {
+                this.playClickSound();
+            }
+            return true;
+        }
         if (carried.isEmpty()) {
             Slot slot = this.findSlot(xCoord, yCoord);
             if (slot instanceof CardPlayerSlot) {
@@ -224,6 +255,9 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (this.clickedCuriosPanel) {
+            return true;
+        }
         this.dragging = true;
 
         ItemStack carried = this.draggingItem;
@@ -249,6 +283,10 @@ public class UpgradeScreen extends AEBaseScreen<UpgradeContainerMenu> {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (this.clickedCuriosPanel) {
+            this.clickedCuriosPanel = false;
+            return true;
+        }
         boolean handled = false;
 
         Slot slot = this.findSlot(mouseX, mouseY);

@@ -2,6 +2,8 @@ package com.ultramega.ae2importexportcard.compat.appflux;
 
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
 
+import java.util.function.Consumer;
+
 import javax.annotation.Nullable;
 
 import appeng.api.config.Actionable;
@@ -83,7 +85,7 @@ public final class AppFluxEnergyCompat {
                                              IGrid grid,
                                              ActionHostEnergySource energySource,
                                              IActionSource source,
-                                             int inventorySlot,
+                                             Consumer<ItemStack> saveStack,
                                              ItemStack itemInInventory,
                                              AEKey energyKey,
                                              long amount) {
@@ -114,7 +116,7 @@ public final class AppFluxEnergyCompat {
             return false;
         }
 
-        player.getInventory().setItem(inventorySlot, itemInInventory);
+        saveStack.accept(itemInInventory);
         player.containerMenu.broadcastChanges();
 
         return true;

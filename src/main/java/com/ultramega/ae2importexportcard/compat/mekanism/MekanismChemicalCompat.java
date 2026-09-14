@@ -2,6 +2,7 @@ package com.ultramega.ae2importexportcard.compat.mekanism;
 
 import com.ultramega.ae2importexportcard.util.AEKeyFilterUtil;
 
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 import appeng.api.config.Actionable;
@@ -9,7 +10,6 @@ import appeng.api.config.FuzzyMode;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
 import appeng.api.storage.StorageHelper;
 import appeng.me.helpers.ActionHostEnergySource;
 import appeng.util.ConfigInventory;
@@ -91,7 +91,7 @@ public final class MekanismChemicalCompat {
                                                IGrid grid,
                                                ActionHostEnergySource energySource,
                                                IActionSource source,
-                                               int inventorySlot,
+                                               Consumer<ItemStack> saveStack,
                                                ItemStack itemInInventory,
                                                AEKey chemicalKey,
                                                long amount) {
@@ -123,7 +123,7 @@ public final class MekanismChemicalCompat {
             return false;
         }
 
-        player.getInventory().setItem(inventorySlot, itemInInventory);
+        saveStack.accept(itemInInventory);
         player.containerMenu.broadcastChanges();
 
         return true;

@@ -3,6 +3,8 @@ package com.ultramega.ae2importexportcard.registry;
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.util.IntegerArrayCodec;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import com.mojang.serialization.Codec;
@@ -27,6 +29,10 @@ public class ModDataComponents {
     public static final DataComponentType<CompoundTag> FILTER_CONFIG = register("filter_config", COMPOUND_TAG_CODECS);
 
     public static final DataComponentType<IntList> SELECTED_INVENTORY_SLOTS = register("selected_inventory_slots", INTEGER_ARRAY_TAG_CODECS);
+
+    public static final DataComponentType<Map<String, Integer>> SELECTED_CURIO_SLOTS = register("selected_curio_slots",
+        builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.intRange(1, 45)))
+            .networkSynchronized(ByteBufCodecs.map(HashMap::new, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.VAR_INT)));
 
     public static final DataComponentType<Integer> BLOCK_PICKER_AMOUNT = register("block_picker_amount", INTEGER_CODECS);
 

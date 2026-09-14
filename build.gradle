@@ -26,6 +26,12 @@ repositories {
         }
     }
     maven {
+        url = uri("https://maven.theillusivec4.top/")
+        content {
+            includeGroup("top.theillusivec4.curios")
+        }
+    }
+    maven {
         name = "TerraformersMC"
         url = "https://maven.terraformersmc.com/"
     }
@@ -97,6 +103,9 @@ configurations {
 dependencies {
     implementation "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
+    localRuntime "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+
     compileOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
     runtimeOnly "de.mari_023:ae2wtlib:${ae2wtlib_version}"
 
@@ -126,7 +135,7 @@ publishMods {
         client = true
         server = true
         requires("applied-energistics-2")
-        optional("mekanism", "applied-mekanistics", "applied-flux")
+        optional("mekanism", "applied-mekanistics", "applied-flux", "applied-energistics-2-wireless-terminals", "curios")
     }
 
     modrinth {
@@ -134,7 +143,7 @@ publishMods {
         projectId = "qelfSMnn"
         minecraftVersions.add(minecraft_version)
         requires("ae2")
-        optional("mekanism", "applied-mekanistics")
+        optional("mekanism", "applied-mekanistics", "curios")
     }
 }
 
@@ -147,6 +156,8 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             loader_version_range   : loader_version_range,
             ae2_version            : ae2_version,
             ae2_version_range      : ae2_version_range,
+            curios_version         : curios_version,
+            curios_version_range   : curios_version_range,
             ae2wtlib_version       : ae2wtlib_version,
             emi_version            : emi_version,
             mod_id                 : mod_id,

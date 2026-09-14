@@ -2,6 +2,8 @@ package com.ultramega.ae2importexportcard.compat.mekanism;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 
+import java.util.function.Consumer;
+
 import appeng.api.config.FuzzyMode;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
@@ -64,7 +66,7 @@ public final class MekanismBridge {
                                                IGrid grid,
                                                ActionHostEnergySource energySource,
                                                IActionSource source,
-                                               int inventorySlot,
+                                               Consumer<ItemStack> saveStack,
                                                ItemStack itemInInventory,
                                                AEKey chemicalKey,
                                                long amount) {
@@ -73,7 +75,7 @@ public final class MekanismBridge {
         }
 
         try {
-            return MekanismChemicalCompat.exportChemicalToItem(player, grid, energySource, source, inventorySlot, itemInInventory, chemicalKey, amount);
+            return MekanismChemicalCompat.exportChemicalToItem(player, grid, energySource, source, saveStack, itemInInventory, chemicalKey, amount);
         } catch (LinkageError ignored) {
             return false;
         }
