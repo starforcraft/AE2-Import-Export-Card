@@ -8,8 +8,8 @@ import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEKey;
 import appeng.me.helpers.ActionHostEnergySource;
 import appeng.util.ConfigInventory;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
 
 public final class AppFluxBridge {
     private AppFluxBridge() {
@@ -27,11 +27,10 @@ public final class AppFluxBridge {
         }
     }
 
-    public static void importEnergyFromItem(ServerPlayer player,
-                                            IGrid grid,
+    public static void importEnergyFromItem(IGrid grid,
                                             ActionHostEnergySource energySource,
                                             IActionSource source,
-                                            int inventorySlot,
+                                            ItemAccess itemAccess,
                                             ItemStack itemInInventory,
                                             ConfigInventory filterConfig,
                                             FuzzyMode fuzzyMode,
@@ -42,29 +41,27 @@ public final class AppFluxBridge {
         }
 
         try {
-            AppFluxEnergyCompat.importEnergyFromItem(player, grid, energySource, source, inventorySlot,
-                itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
+            AppFluxEnergyCompat.importEnergyFromItem(grid, energySource, source, itemAccess, itemInInventory, filterConfig, fuzzyMode, fuzzy, invertFilter);
         } catch (LinkageError ignored) {
         }
     }
 
-    public static boolean canAcceptEnergy(ServerPlayer player, int inventorySlot, ItemStack stack, AEKey chemicalKey, long amount) {
+    public static boolean canAcceptEnergy(ItemAccess itemAccess, ItemStack stack, AEKey chemicalKey, long amount) {
         if (!AE2ImportExportCard.APPFLUX_INSTALLED) {
             return false;
         }
 
         try {
-            return AppFluxEnergyCompat.canAcceptEnergy(player, inventorySlot, stack, chemicalKey, amount);
+            return AppFluxEnergyCompat.canAcceptEnergy(itemAccess, stack, chemicalKey, amount);
         } catch (LinkageError ignored) {
             return false;
         }
     }
 
-    public static boolean exportEnergyToItem(ServerPlayer player,
-                                             IGrid grid,
+    public static boolean exportEnergyToItem(IGrid grid,
                                              ActionHostEnergySource energySource,
                                              IActionSource source,
-                                             int inventorySlot,
+                                             ItemAccess itemAccess,
                                              ItemStack itemInInventory,
                                              AEKey chemicalKey,
                                              long amount) {
@@ -73,7 +70,7 @@ public final class AppFluxBridge {
         }
 
         try {
-            return AppFluxEnergyCompat.exportEnergyToItem(player, grid, energySource, source, inventorySlot, itemInInventory, chemicalKey, amount);
+            return AppFluxEnergyCompat.exportEnergyToItem(grid, energySource, source, itemAccess, itemInInventory, chemicalKey, amount);
         } catch (LinkageError ignored) {
             return false;
         }

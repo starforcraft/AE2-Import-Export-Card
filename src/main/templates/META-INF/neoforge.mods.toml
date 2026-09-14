@@ -34,3 +34,10 @@ config="${mod_id}.mixins.json"
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="curios"
+    type="optional"
+    versionRange="${curios_version_range}"
+    ordering="AFTER"
+    side="BOTH"

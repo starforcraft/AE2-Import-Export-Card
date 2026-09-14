@@ -6,16 +6,18 @@ import com.ultramega.ae2importexportcard.util.CardConfigManager;
 import com.ultramega.ae2importexportcard.util.UpgradeType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.ids.AEComponents;
-import appeng.core.definitions.AEItems;
 import appeng.api.upgrades.IUpgradeInventory;
 import appeng.api.upgrades.UpgradeInventories;
 import appeng.api.util.IConfigManager;
 import appeng.api.util.IConfigurableObject;
+import appeng.core.definitions.AEItems;
 import appeng.helpers.WirelessTerminalMenuHost;
 import appeng.util.ConfigInventory;
 import appeng.util.inv.AppEngInternalInventory;
@@ -117,6 +119,21 @@ public class UpgradeHost implements IConfigurableObject {
         return new int[SELECTED_INVENTORY_SLOT_COUNT];
     }
 
+    public Map<String, Integer> getSelectedCurioSlots() {
+        return this.upgradeStack.getOrDefault(ModDataComponents.SELECTED_CURIO_SLOTS, Map.of());
+    }
+
+    public void setSelectedCurioSlot(String key, int filter) {
+        Map<String, Integer> selected = new HashMap<>(this.getSelectedCurioSlots());
+        if (filter == 0) {
+            selected.remove(key);
+        } else {
+            selected.put(key, filter);
+        }
+        this.upgradeStack.set(ModDataComponents.SELECTED_CURIO_SLOTS, Map.copyOf(selected));
+        this.onUpgradesChanged(this.upgradeStack, this.getUpgrades());
+    }
+
     public static int getUpgradeSlotCount(UpgradeType type) {
         return type == UpgradeType.EXPORT ? EXPORT_UPGRADE_SLOT_COUNT : IMPORT_UPGRADE_SLOT_COUNT;
     }
@@ -142,6 +159,10 @@ public class UpgradeHost implements IConfigurableObject {
             int activeFilterSlots = getFilterSlotCount(upgrades);
             int[] selectedInventorySlots = stack.getOrDefault(ModDataComponents.SELECTED_INVENTORY_SLOTS,
                 new IntArrayList(new int[SELECTED_INVENTORY_SLOT_COUNT])).toIntArray();
+            Map<String, Integer> selectedCurios = new HashMap<>(stack.getOrDefault(ModDataComponents.SELECTED_CURIO_SLOTS, Map.of()));
+            if (selectedCurios.values().removeIf(filter -> filter > activeFilterSlots)) {
+                stack.set(ModDataComponents.SELECTED_CURIO_SLOTS, Map.copyOf(selectedCurios));
+            }
             boolean changed = false;
             for (int i = 0; i < selectedInventorySlots.length; i++) {
                 if (selectedInventorySlots[i] > activeFilterSlots) {
@@ -170,5 +191,9 @@ public class UpgradeHost implements IConfigurableObject {
     @Override
     public IConfigManager getConfigManager() {
         return this.configManager;
+    }
+
+    public UpgradeType getType() {
+        return this.type;
     }
 }

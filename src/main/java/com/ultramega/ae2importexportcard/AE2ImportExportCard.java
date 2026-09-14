@@ -1,7 +1,10 @@
 package com.ultramega.ae2importexportcard;
 
+import com.ultramega.ae2importexportcard.compat.curios.CuriosBridge;
+import com.ultramega.ae2importexportcard.compat.curios.CuriosTerminalTicker;
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
 import com.ultramega.ae2importexportcard.network.BlockPickerData;
+import com.ultramega.ae2importexportcard.network.CurioSlotUpdateData;
 import com.ultramega.ae2importexportcard.network.UpgradeUpdateData;
 import com.ultramega.ae2importexportcard.registry.ModCreativeTabs;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
@@ -15,12 +18,15 @@ import appeng.core.definitions.AEItems;
 import de.mari_023.ae2wtlib.AE2wtlibItems;
 import de.mari_023.ae2wtlib.api.AE2wtlibAPI;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -43,12 +49,14 @@ public final class AE2ImportExportCard {
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
 
+        NeoForge.EVENT_BUS.addListener(this::onPlayerTickEvent);
+
         modEventBus.addListener((RegisterPayloadHandlersEvent event) -> {
             PayloadRegistrar registrar = event.registrar(MOD_ID);
             registrar.playBidirectional(UpgradeUpdateData.TYPE, UpgradeUpdateData.STREAM_CODEC, UpgradeUpdateData::handle, UpgradeUpdateData::handle);
             registrar.playToServer(BlockPickerData.TYPE, BlockPickerData.STREAM_CODEC, BlockPickerData::handle);
+            registrar.playToServer(CurioSlotUpdateData.TYPE, CurioSlotUpdateData.STREAM_CODEC, CurioSlotUpdateData::handle);
         });
-
         modEventBus.addListener(this::registerScreens);
         modEventBus.addListener(this::commonSetup);
     }
@@ -91,6 +99,16 @@ public final class AE2ImportExportCard {
         Upgrades.add(AEItems.INVERTER_CARD, ModItems.IMPORT_CARD.get(), 1);
         Upgrades.add(AEItems.CRAFTING_CARD, ModItems.EXPORT_CARD.get(), 1);
         Upgrades.add(AEItems.SPEED_CARD, ModItems.EXPORT_CARD.get(), 1);
+    }
+
+    private void onPlayerTickEvent(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            for (CuriosBridge.Slot slot : CuriosBridge.getSlots(player)) {
+                if (slot.stack().getItem() instanceof CuriosTerminalTicker ticker) {
+                    ticker.ae2ImportExportCard$tickEquippedTerminal(player, slot.stack());
+                }
+            }
+        }
     }
 
     public static Identifier makeId(final String id) {

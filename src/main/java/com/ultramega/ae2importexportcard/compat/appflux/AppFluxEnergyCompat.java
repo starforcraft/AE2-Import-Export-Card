@@ -14,7 +14,6 @@ import appeng.me.helpers.ActionHostEnergySource;
 import appeng.util.ConfigInventory;
 import com.glodblock.github.appflux.common.me.key.FluxKey;
 import com.glodblock.github.appflux.common.me.key.type.EnergyType;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.access.ItemAccess;
@@ -29,17 +28,16 @@ public final class AppFluxEnergyCompat {
         return key instanceof FluxKey;
     }
 
-    public static void importEnergyFromItem(ServerPlayer player,
-                                            IGrid grid,
+    public static void importEnergyFromItem(IGrid grid,
                                             ActionHostEnergySource energySource,
                                             IActionSource source,
-                                            int inventorySlot,
+                                            ItemAccess itemAccess,
                                             ItemStack itemInInventory,
                                             ConfigInventory filterConfig,
                                             FuzzyMode fuzzyMode,
                                             boolean fuzzy,
                                             boolean invertFilter) {
-        EnergyHandler energyHandler = getEnergyHandler(player, itemInInventory, inventorySlot);
+        EnergyHandler energyHandler = getEnergyHandler(itemInInventory, itemAccess);
         if (energyHandler == null) {
             return;
         }
@@ -101,15 +99,14 @@ public final class AppFluxEnergyCompat {
         }
     }
 
-    public static boolean exportEnergyToItem(ServerPlayer player,
-                                             IGrid grid,
+    public static boolean exportEnergyToItem(IGrid grid,
                                              ActionHostEnergySource energySource,
                                              IActionSource source,
-                                             int inventorySlot,
+                                             ItemAccess itemAccess,
                                              ItemStack itemInInventory,
                                              AEKey energyKey,
                                              long amount) {
-        EnergyInsertTarget target = getEnergyInsertTarget(player, inventorySlot, itemInInventory, energyKey, amount);
+        EnergyInsertTarget target = getEnergyInsertTarget(itemAccess, itemInInventory, energyKey, amount);
         if (target == null) {
             return false;
         }
@@ -149,12 +146,12 @@ public final class AppFluxEnergyCompat {
         return true;
     }
 
-    public static boolean canAcceptEnergy(ServerPlayer player, int inventorySlot, ItemStack stack, AEKey chemicalKey, long amount) {
-        return getEnergyInsertTarget(player, inventorySlot, stack, chemicalKey, amount) != null;
+    public static boolean canAcceptEnergy(ItemAccess itemAccess, ItemStack stack, AEKey chemicalKey, long amount) {
+        return getEnergyInsertTarget(itemAccess, stack, chemicalKey, amount) != null;
     }
 
     @Nullable
-    private static EnergyInsertTarget getEnergyInsertTarget(ServerPlayer player, int inventorySlot, ItemStack stack, AEKey energyKey, long amount) {
+    private static EnergyInsertTarget getEnergyInsertTarget(ItemAccess itemAccess, ItemStack stack, AEKey energyKey, long amount) {
         if (!(energyKey instanceof FluxKey fluxKey) || amount <= 0) {
             return null;
         }
@@ -164,7 +161,7 @@ public final class AppFluxEnergyCompat {
             return null;
         }
 
-        EnergyHandler energyHandler = getEnergyHandler(player, stack, inventorySlot);
+        EnergyHandler energyHandler = getEnergyHandler(stack, itemAccess);
         if (energyHandler == null) {
             return null;
         }
@@ -181,12 +178,12 @@ public final class AppFluxEnergyCompat {
     }
 
     @Nullable
-    private static EnergyHandler getEnergyHandler(ServerPlayer player, ItemStack stack, int inventorySlot) {
+    private static EnergyHandler getEnergyHandler(ItemStack stack, ItemAccess itemAccess) {
         if (stack.isEmpty()) {
             return null;
         }
 
-        return stack.getCapability(Capabilities.Energy.ITEM, ItemAccess.forPlayerSlot(player, inventorySlot));
+        return stack.getCapability(Capabilities.Energy.ITEM, itemAccess);
     }
 
     private static int toIntAmount(long amount) {
