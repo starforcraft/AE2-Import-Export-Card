@@ -2,6 +2,9 @@
 	"itemGroup.ae2importexportcard" : "AE2 Import Export Card",
 	"item.ae2importexportcard.import_card": "Карта импорта",
 	"item.ae2importexportcard.export_card": "Карта экспорта",
+	"item.ae2importexportcard.block_picker_card": "Карта выбора блока",
+	"gui.ae2importexportcard.block_picker_amount": "Количество выбираемых блоков",
+	"gui.ae2importexportcard.block_picker_amount.value": "Количество блоков для выбора: %s",
 	"gui.ae2importexportcard.whitelist": "Белый список",
 	"gui.ae2importexportcard.blacklist": "Чёрный список"
 }
