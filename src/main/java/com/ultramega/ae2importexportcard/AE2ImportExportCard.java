@@ -2,6 +2,7 @@ package com.ultramega.ae2importexportcard;
 
 import com.ultramega.ae2importexportcard.compat.curios.CuriosBridge;
 import com.ultramega.ae2importexportcard.compat.curios.CuriosTerminalTicker;
+import com.ultramega.ae2importexportcard.config.ServerConfig;
 import com.ultramega.ae2importexportcard.container.UpgradeContainerMenu;
 import com.ultramega.ae2importexportcard.network.BlockPickerData;
 import com.ultramega.ae2importexportcard.network.CurioSlotUpdateData;
@@ -21,8 +22,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -42,7 +45,9 @@ public final class AE2ImportExportCard {
     public static boolean APPFLUX_INSTALLED = false;
     public static boolean MEKANISM_INSTALLED = false;
 
-    public AE2ImportExportCard(IEventBus modEventBus) {
+    public AE2ImportExportCard(IEventBus modEventBus, ModContainer modContainer) {
+        modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);
+
         registerMenus();
 
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);

@@ -2,6 +2,7 @@ package com.ultramega.ae2importexportcard.util;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
+import com.ultramega.ae2importexportcard.config.ServerConfig;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
@@ -51,7 +52,7 @@ public final class BlockPickerHandler {
         }
 
         final AEItemKey itemKey = AEItemKey.of(pickedStack);
-        if (itemKey == null) {
+        if (itemKey == null || !ServerConfig.allowsExport(itemKey)) {
             return;
         }
 

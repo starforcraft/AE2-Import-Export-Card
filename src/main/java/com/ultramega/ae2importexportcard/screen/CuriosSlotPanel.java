@@ -81,8 +81,7 @@ public final class CuriosSlotPanel {
             int sx = this.x + 2 + cell % this.columns * 18;
             int sy = this.y + this.slotTop + 2 + cell / this.columns * 18;
             if (slot.stack().isEmpty() && slot.icon() != null) {
-                graphics.blit(sx, sy, 0, 16, 16,
-                    Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(slot.icon()));
+                graphics.blit(sx, sy, 0, 16, 16, Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(slot.icon()));
             } else {
                 graphics.renderItem(slot.stack(), sx, sy);
             }
