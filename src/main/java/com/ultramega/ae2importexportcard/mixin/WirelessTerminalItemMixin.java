@@ -5,6 +5,7 @@ import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
 import com.ultramega.ae2importexportcard.compat.appflux.AppFluxBridge;
 import com.ultramega.ae2importexportcard.compat.curios.CuriosBridge;
 import com.ultramega.ae2importexportcard.compat.curios.CuriosTerminalTicker;
+import com.ultramega.ae2importexportcard.config.ServerConfig;
 import com.ultramega.ae2importexportcard.item.UpgradeHost;
 import com.ultramega.ae2importexportcard.registry.ModDataComponents;
 import com.ultramega.ae2importexportcard.registry.ModItems;
@@ -26,7 +27,9 @@ import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
+import appeng.api.storage.StorageCells;
 import appeng.api.storage.StorageHelper;
+import appeng.api.storage.cells.ICellWorkbenchItem;
 import appeng.api.upgrades.IUpgradeInventory;
 import appeng.api.upgrades.UpgradeInventories;
 import appeng.api.util.IConfigManager;
@@ -384,12 +387,12 @@ public abstract class WirelessTerminalItemMixin extends Item implements CuriosTe
         }
 
         GenericStack filter = filterConfig.getStack(filterIndex);
-        if (filter == null) {
+        if (filter == null || !ServerConfig.allowsExport(filter.what())) {
             return;
         }
 
         AEKey exportKey = this.ae2ImportExportCard$resolveExportKey(grid, filter.what(), upgradeInventory, fuzzyMode);
-        if (exportKey == null) {
+        if (exportKey == null || !ServerConfig.allowsExport(exportKey)) {
             return;
         }
 
@@ -397,11 +400,12 @@ public abstract class WirelessTerminalItemMixin extends Item implements CuriosTe
             return;
         }
 
-        if (itemHandler == null) {
+        if (itemInInventory.getItem() instanceof ICellWorkbenchItem
+            && this.ae2ImportExportCard$exportToCell(level, grid, energySource, source, itemAccess, exportKey, filter.what(), upgradeInventory)) {
             return;
         }
 
-        if (exportKey instanceof AEItemKey itemKey) {
+        if (exportKey instanceof AEItemKey itemKey && itemHandler != null) {
             this.ae2ImportExportCard$exportItemToPlayerSlot(level, grid, energySource, source, inventorySlot, itemKey, filter.what(), itemHandler, upgradeInventory);
         } else if (exportKey instanceof AEFluidKey fluidKey) {
             this.ae2ImportExportCard$exportFluidToPlayerSlot(grid, energySource, source, itemAccess, itemInInventory, fluidKey, upgradeInventory);
@@ -438,6 +442,76 @@ public abstract class WirelessTerminalItemMixin extends Item implements CuriosTe
     }
 
     @Unique
+    private boolean ae2ImportExportCard$exportToCell(Level level,
+                                                     IGrid grid,
+                                                     ActionHostEnergySource energySource,
+                                                     IActionSource source,
+                                                     ItemAccess itemAccess,
+                                                     AEKey exportKey,
+                                                     AEKey craftingKey,
+                                                     IUpgradeInventory upgradeInventory) {
+        // Never duplicate a cell's contents across a stack of multiple items
+        if (itemAccess.getAmount() != 1) {
+            return false;
+        }
+
+        ItemStack cellStack = itemAccess.getResource().toStack();
+        var cell = StorageCells.getCellInventory(cellStack, null);
+        if (cell == null) {
+            return false;
+        }
+
+        int operations = upgradeInventory.isInstalled(AEItems.SPEED_CARD) ? 64 : 1;
+        long limit = (long) exportKey.getAmountPerOperation() * operations;
+        long requested = cell.insert(exportKey, limit, Actionable.SIMULATE, source);
+        if (requested <= 0) {
+            return false;
+        }
+
+        var network = grid.getStorageService().getInventory();
+        long extractable = StorageHelper.poweredExtraction(energySource, network, exportKey, requested, source, Actionable.SIMULATE);
+        if (extractable <= 0) {
+            this.ae2ImportExportCard$requestCraftingIfPossible(level, grid, craftingKey, (int) Math.min(requested, Integer.MAX_VALUE), upgradeInventory);
+            return true;
+        }
+
+        long accepted = cell.insert(exportKey, extractable, Actionable.MODULATE, source);
+        if (accepted <= 0) {
+            return true;
+        }
+        cell.persist();
+        try (Transaction tx = Transaction.openRoot()) {
+            if (itemAccess.exchange(ItemResource.of(cellStack), 1, tx) != 1) {
+                return true;
+            }
+        }
+
+        long extracted = StorageHelper.poweredExtraction(energySource, network, exportKey, accepted, source, Actionable.MODULATE);
+        if (extracted <= 0) {
+            return true;
+        }
+
+        cellStack = itemAccess.getResource().toStack();
+        cell = StorageCells.getCellInventory(cellStack, null);
+        long inserted = cell == null ? 0 : cell.insert(exportKey, extracted, Actionable.MODULATE, source);
+        boolean committed = false;
+        if (inserted > 0) {
+            cell.persist();
+            try (Transaction tx = Transaction.openRoot()) {
+                if (itemAccess.exchange(ItemResource.of(cellStack), 1, tx) == 1) {
+                    tx.commit();
+                    committed = true;
+                }
+            }
+        }
+        long remainder = extracted - (committed ? inserted : 0);
+        if (remainder > 0) {
+            network.insert(exportKey, remainder, Actionable.MODULATE, source);
+        }
+        return true;
+    }
+
+    @Unique
     private AEKey ae2ImportExportCard$resolveExportKey(IGrid grid, AEKey filterKey, IUpgradeInventory upgradeInventory, FuzzyMode fuzzyMode) {
         if (!upgradeInventory.isInstalled(AEItems.FUZZY_CARD)) {
             return filterKey;
@@ -447,6 +521,7 @@ public abstract class WirelessTerminalItemMixin extends Item implements CuriosTe
             .getCachedInventory()
             .findFuzzy(filterKey, fuzzyMode)
             .stream()
+            .filter(entry -> ServerConfig.allowsExport(entry.getKey()))
             .findFirst()
             .map(Map.Entry::getKey)
             .orElse(null);
@@ -555,7 +630,7 @@ public abstract class WirelessTerminalItemMixin extends Item implements CuriosTe
 
     @Unique
     private void ae2ImportExportCard$requestCraftingIfPossible(Level level, IGrid grid, AEKey what, int amount, IUpgradeInventory upgradeInventory) {
-        if (!upgradeInventory.isInstalled(AEItems.CRAFTING_CARD)) {
+        if (!ServerConfig.allowsExport(what) || !upgradeInventory.isInstalled(AEItems.CRAFTING_CARD)) {
             return;
         }
 
@@ -573,7 +648,7 @@ public abstract class WirelessTerminalItemMixin extends Item implements CuriosTe
 
             try {
                 ICraftingPlan job = this.ae2ImportExportCard$craftingJob.get();
-                if (job != null) {
+                if (job != null && ServerConfig.allowsExport(job.finalOutput().what())) {
                     craftingService.submitJob(job, null, null, false, source);
                 }
             } catch (InterruptedException | ExecutionException ignored) {
