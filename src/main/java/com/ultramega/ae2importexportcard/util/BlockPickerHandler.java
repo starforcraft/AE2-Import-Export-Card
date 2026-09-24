@@ -2,6 +2,7 @@ package com.ultramega.ae2importexportcard.util;
 
 import com.ultramega.ae2importexportcard.AE2ImportExportCard;
 import com.ultramega.ae2importexportcard.compat.ae2wtlib.Ae2WtlibUtil;
+import com.ultramega.ae2importexportcard.compat.curios.CuriosBridge;
 import com.ultramega.ae2importexportcard.config.ServerConfig;
 
 import appeng.api.config.Actionable;
@@ -56,17 +57,29 @@ public final class BlockPickerHandler {
             return;
         }
 
-        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-            if (tryExtract(player, inventory.getItem(slot), slot, destinationSlot, itemKey)) {
-                inventory.pickSlot(destinationSlot);
-                player.connection.send(new ClientboundSetCarriedItemPacket(inventory.selected));
-                player.inventoryMenu.broadcastChanges();
-                return;
-            }
+        if (tryExtractFromTerminals(player, destinationSlot, itemKey)) {
+            inventory.pickSlot(destinationSlot);
+            player.connection.send(new ClientboundSetCarriedItemPacket(inventory.selected));
+            player.inventoryMenu.broadcastChanges();
         }
     }
 
-    private static boolean tryExtract(final ServerPlayer player, final ItemStack terminalStack, final int terminalSlot,
+    private static boolean tryExtractFromTerminals(final ServerPlayer player, final int destinationSlot, final AEItemKey itemKey) {
+        final Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            if (tryExtract(player, inventory.getItem(slot), destinationSlot, itemKey)) {
+                return true;
+            }
+        }
+        for (CuriosBridge.Slot slot : CuriosBridge.getSlots(player)) {
+            if (tryExtract(player, slot.stack(), destinationSlot, itemKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean tryExtract(final ServerPlayer player, final ItemStack terminalStack,
                                       final int destinationSlot, final AEItemKey itemKey) {
         if (!(terminalStack.getItem() instanceof WirelessTerminalItem terminalItem) || BlockPickerCardConfig.findCard(terminalStack).isEmpty()) {
             return false;
@@ -80,7 +93,7 @@ public final class BlockPickerHandler {
             grid = terminalItem.getLinkedGrid(terminalStack, player.level(), null);
         }
         if (grid == null
-            || !(terminalItem.getMenuHost(player, MenuLocators.forInventorySlot(terminalSlot), null) instanceof WirelessTerminalMenuHost<?> host)
+            || !(terminalItem.getMenuHost(player, MenuLocators.forStack(terminalStack), null) instanceof WirelessTerminalMenuHost<?> host)
             || host.getActionableNode() == null) {
             return false;
         }
